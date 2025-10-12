@@ -1,8 +1,9 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { storage } from '@/utils/storage'
-import { request } from '@/utils/request'
-import type { UserSession, LoginRequest, LoginResponse, UserIdentity } from '@/types'
+import { simpleLogin, sduLogin, refreshToken as refreshTokenApi } from '@/api/login'
+import { getUserInfo, logout as logoutApi } from '@/api/user'
+import type { UserSession, LoginRequest, LoginResponse, UserIdentity, UserInfo } from '@/types'
 
 export const useUserStore = defineStore('user', () => {
   // State
@@ -29,32 +30,35 @@ export const useUserStore = defineStore('user', () => {
    * 登录
    */
   async function login(loginData: LoginRequest, isSDULogin: boolean = false) {
-    const endpoint = isSDULogin ? '/login/SDULogin' : '/login/simpleLogin'
-    const response = await request.post<LoginResponse>(endpoint, loginData)
-    
+    const response = isSDULogin ? await sduLogin(loginData) : await simpleLogin(loginData)
+
+    // API返回code为200表示成功
     if (response.code === 200 && response.data) {
       const { accessToken, refreshToken: refresh, username: name, permission } = response.data
-      
+
       // 保存 token
       token.value = accessToken
       refreshToken.value = refresh
-      
+
+      // 将permission字符串转换为数字
+      const identityValue = typeof permission === 'string' ? parseInt(permission) : permission
+
       // 保存用户信息
       userInfo.value = {
         token: accessToken,
         refreshToken: refresh,
         username: name,
-        identity: permission
+        identity: identityValue as UserIdentity
       }
-      
+
       // 持久化到本地存储
       storage.setToken(accessToken)
       storage.setRefreshToken(refresh)
       storage.setUserInfo(userInfo.value)
-      
+
       return response.data
     }
-    
+
     throw new Error(response.msg || '登录失败')
   }
   
@@ -63,23 +67,16 @@ export const useUserStore = defineStore('user', () => {
    */
   async function refreshAccessToken() {
     try {
-      const response = await request.post<{ accessToken: string }>(
-        '/login/refreshToken',
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${refreshToken.value}`
-          }
-        }
-      )
-      
+      const response = await refreshTokenApi()
+
+      // API返回code为200表示成功
       if (response.code === 200 && response.data) {
         token.value = response.data.accessToken
         userInfo.value.token = response.data.accessToken
-        
+
         storage.setToken(response.data.accessToken)
         storage.setUserInfo(userInfo.value)
-        
+
         return response.data.accessToken
       }
     } catch (error) {
@@ -92,12 +89,20 @@ export const useUserStore = defineStore('user', () => {
   /**
    * 退出登录
    */
-  function logout() {
-    token.value = ''
-    refreshToken.value = ''
-    userInfo.value = {}
-    
-    storage.clear()
+  async function logout() {
+    try {
+      // 调用登出API
+      await logoutApi()
+    } catch (error) {
+      console.error('登出API调用失败:', error)
+    } finally {
+      // 清除本地存储和状态
+      token.value = ''
+      refreshToken.value = ''
+      userInfo.value = {}
+
+      storage.clear()
+    }
   }
   
   /**
@@ -131,22 +136,28 @@ export const useUserStore = defineStore('user', () => {
    */
   async function fetchUserInfo() {
     try {
-      // 根据身份类型调用不同的接口
-      let endpoint = ''
-      if (isStudent.value) {
-        endpoint = '/student/info'
-      } else if (isTeacher.value) {
-        endpoint = '/teacher/info'
-      } else if (isAdmin.value) {
-        endpoint = '/admin/info'
-      }
-      
-      if (endpoint) {
-        const response = await request.get(endpoint)
-        if (response.code === 200 && response.data) {
-          updateUserInfo(response.data)
-          return response.data
+      const response = await getUserInfo()
+      // API返回code为200表示成功
+      if (response.code === 200 && response.data) {
+        // 更新用户信息，将API返回的数据映射到UserSession格式
+        const apiData = response.data
+        const sessionData: Partial<UserSession> = {
+          id: apiData.id,
+          username: apiData.username,
+          email: apiData.email,
+          phone: apiData.phone,
+          sex: apiData.sex,
+          nation: apiData.nation,
+          ethnic: apiData.ethnic,
+          sduid: apiData.sduid,
+          major: apiData.major,
+          politicsStatus: apiData.politicsStatus,
+          college: apiData.college,
+          identity: apiData.permission as UserIdentity
         }
+
+        updateUserInfo(sessionData)
+        return response.data
       }
     } catch (error) {
       console.error('获取用户信息失败:', error)

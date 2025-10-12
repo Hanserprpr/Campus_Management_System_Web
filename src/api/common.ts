@@ -24,3 +24,31 @@ export function getClassRoomList() {
   return request.get('/Teacher/getClassRoom')
 }
 
+/**
+ * 学期管理相关 API
+ */
+
+/**
+ * 添加学期
+ * @param term 学期名称
+ * @returns 响应数据
+ */
+export function addTerm(term?: string) {
+  return request.post('/term/addTerm', null, {
+    params: { term }
+  })
+}
+
+/**
+ * 开放/关闭选课
+ * @param term 学期
+ * @param open 是否开放选课
+ * @param current 是否当前学期
+ * @returns 响应数据
+ */
+export function editSelection(term?: string, open?: boolean, current?: boolean) {
+  return request.post('/term/editSelection', null, {
+    params: { term, open, current }
+  })
+}
+

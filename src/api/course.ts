@@ -30,20 +30,18 @@ export function dropCourse(courseId: number) {
   return request.post(`/course-selection/drop/${courseId}`, {})
 }
 
-// 获取课程详情
+// 获取课程详情 (使用OpenAPI中的class/detail端点)
 export function getCourseDetail(courseId: number) {
-  return request.get<Course>(`/course/${courseId}`)
+  return request.get<Course>(`/class/detail/${courseId}`)
 }
 
-// 搜索课程
+// 搜索课程 (使用OpenAPI中的course-selection/search端点)
 export function searchCourses(params: {
   keyword?: string
-  category?: string
-  college?: string
-  page?: number
-  size?: number
+  term?: string
+  type?: string
 }) {
-  return request.get<PageResponse<Course>>('/course/search', params)
+  return request.get<Course[]>('/course-selection/search', params)
 }
 
 // 获取课表
@@ -61,14 +59,51 @@ export function applyCourse(data: Partial<Course>) {
   return request.post('/teacher/course/apply', data)
 }
 
-// 教师：编辑课程
-export function updateCourse(courseId: number, data: Partial<Course>) {
-  return request.put(`/teacher/course/${courseId}`, data)
+// 教师：搜索教师创建的课程列表
+export function searchTeacherCourses(params: {
+  term?: string
+  pageNum: number
+  pageSize: number
+  keyword?: string
+}) {
+  return request.get('/class/searchTeacherCourses', params)
+}
+
+// 教师：修改课程信息
+export function updateTeacherCourse(courseId: number, data: any) {
+  return request.post(`/class/update/${courseId}`, data)
 }
 
 // 教师：删除课程
-export function deleteCourse(courseId: number) {
-  return request.delete(`/teacher/course/${courseId}`)
+export function deleteTeacherCourse(courseId: number) {
+  return request.post(`/class/delete/${courseId}`)
+}
+
+// 管理员：获取待批准的课程列表
+export function getPendingCourses() {
+  return request.get('/class/pending')
+}
+
+// 获取已选课成员名单
+export function getCourseStudents(courseId: number) {
+  return request.get(`/class/${courseId}/students`)
+}
+
+// 管理员：排课
+export function autoSchedule(term: string) {
+  return request.post('/class/autoSchedule', null, {
+    params: { term }
+  })
+}
+
+// 管理员：删除已审核课程
+export function deleteApprovedCourse(courseId: number) {
+  return request.post(`/class/deleteAd/${courseId}`)
+}
+
+// 获取课程被退回原因
+export function getCourseReason(courseId: number) {
+  return request.get(`/class/getReason/${courseId}`)
 }
 
 // 管理员：获取所有课程
@@ -77,7 +112,7 @@ export function getAllCourses(params?: PageRequest) {
 }
 
 // 管理员：审核课程申请
-export function approveCourse(courseId: number, approved: boolean, reason?: string) {
-  return request.post('/admin/course/approve', { courseId, approved, reason })
+export function approveCourse(courseId: number, status: number, reason?: string, classNum?: Array<number>) {
+  return request.post(`/class/approve/${courseId}`, classNum, {params: { status, reason }})
 }
 

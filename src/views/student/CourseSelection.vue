@@ -132,7 +132,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getUnselectedCourses, getSelectedCourses, selectCourse, dropCourse } from '@/api/course'
+import { searchCourses, getUnselectedCourses, getSelectedCourses, selectCourse, dropCourse } from '@/api/course'
 import type { Course } from '@/types'
 
 const activeTab = ref('unselected')
@@ -165,18 +165,26 @@ const formatCourseTime = (course: Course) => {
 const loadUnselectedCourses = async () => {
   loading.value = true
   try {
-    const response = await getUnselectedCourses({
-      page: unselectedPage.page,
-      size: unselectedPage.size,
-      ...searchForm
-    })
-    
+    // 如果有搜索条件，使用搜索API，否则使用获取未选课程API
+    const response = searchForm.keyword || searchForm.category
+      ? await searchCourses({
+          keyword: searchForm.keyword,
+          category: searchForm.category,
+          page: unselectedPage.page,
+          size: unselectedPage.size
+        })
+      : await getUnselectedCourses({
+          page: unselectedPage.page,
+          size: unselectedPage.size
+        })
+
     if (response.code === 200 && response.data) {
-      unselectedCourses.value = response.data.list || []
-      unselectedPage.total = response.data.total || 0
+      unselectedCourses.value = response.data.list || response.data || []
+      unselectedPage.total = response.data.total || response.data.length || 0
     }
   } catch (error) {
     console.error('获取可选课程失败:', error)
+    ElMessage.error('获取课程列表失败')
   } finally {
     loading.value = false
   }

@@ -117,24 +117,28 @@ const handleLogin = async () => {
         await Promise.all([
           appStore.fetchSemesters(),
           appStore.fetchCurrentTerm(),
-          userStore.identity !== 2 ? appStore.fetchClassrooms() : Promise.resolve()
+          userStore.identity != 2 ? appStore.fetchClassrooms() : Promise.resolve()
         ])
         
         ElMessage.success('登录成功')
-        console.log(userStore.identity)
+        console.log('用户身份:', userStore.identity)
         // 根据用户身份跳转到对应页面
         switch (userStore.identity) {
           case 0:
             router.push('/admin')
+            console.log('管理员登录成功')
             break
           case 1:
             router.push('/teacher')
+            console.log('教师登录成功')
             break
           case 2:
             router.push('/student')
+            console.log('学生登录成功')
             break
           default:
             router.push('/')
+            console.log('未知身份，跳转到首页')
         }
       } catch (error: any) {
         ElMessage.error(error.message || '登录失败')
