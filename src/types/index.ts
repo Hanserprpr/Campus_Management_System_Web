@@ -205,6 +205,17 @@ export interface CourseApplication extends Course {
 
 /**
  * 公告信息
+/**
+ * 公告信息 (从 /notice/getStudentNoticeList 获取)
+ */
+export interface Notice {
+  id: number;
+  title: string;
+  content: string;
+  createTime: string;
+  updateTime?: string;
+  publisher?: string;
+}
  */
 export interface Announcement {
   id: number

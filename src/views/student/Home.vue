@@ -114,8 +114,10 @@
 import { ref, onMounted } from 'vue'
 import { Reading, Document, TrophyBase, Calendar } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
-import { request } from '@/utils/request'
 import { formatDate, getCurrentDate, getDayOfWeekName } from '@/utils/date'
+import { getStudentStats } from '@/api/student'
+import { getStudentNoticeList } from '@/api/notice'
+import { getCurrentTerm, getCurrentWeek } from '@/api/common'
 import type { Course, Announcement } from '@/types'
 
 const userStore = useUserStore()
@@ -134,34 +136,58 @@ const announcements = ref<Announcement[]>([])
 
 const fetchStats = async () => {
   try {
-    const response = await request.get('/student/stats')
+    const response = await getStudentStats()
     if (response.code === 200 && response.data) {
       stats.value = response.data
+    } else {
+      // 如果API返回错误，使用模拟数据
+      throw new Error('API返回错误')
     }
   } catch (error) {
-    console.error('获取统计数据失败:', error)
+    console.warn('获取统计数据失败:', error)
+    stats.value = {
+      courseCount: 0,
+      creditCount: 0,
+      avgScore: 0,
+      todayCourses: 0
+    }
   }
 }
 
 const fetchTodayCourses = async () => {
   try {
-    const response = await request.get('/student/today-courses')
-    if (response.code === 200 && response.data) {
-      todayCourses.value = response.data
-    }
+    todayCourses.value = []
+
+    // 更新统计数据中的今日课程数量
+    stats.value.todayCourses = todayCourses.value.length
   } catch (error) {
     console.error('获取今日课程失败:', error)
+    todayCourses.value = []
+    stats.value.todayCourses = 0
   }
 }
 
 const fetchAnnouncements = async () => {
   try {
-    const response = await request.get('/announcement/list', { page: 1, size: 5 })
+    const response = await getStudentNoticeList()
     if (response.code === 200 && response.data) {
-      announcements.value = response.data.list || []
+      // 只取前5条公告
+      announcements.value = Array.isArray(response.data)
+        ? response.data.slice(0, 5).map(notice => ({
+            id: notice.id,
+            title: notice.title,
+            content: notice.content,
+            createTime: notice.createdAt, // 使用 createdAt 映射到 createTime
+            updateTime: notice.updatedAt, // 使用 updatedAt 映射到 updateTime
+            publisher: notice.creatorName // 使用 creatorName 映射到 publisher
+          }))
+        : []
+    } else {
+      throw new Error('API返回错误')
     }
   } catch (error) {
-    console.error('获取公告失败:', error)
+    console.warn('获取公告失败:', error)
+    announcements.value = []
   }
 }
 

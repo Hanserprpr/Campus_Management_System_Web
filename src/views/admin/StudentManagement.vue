@@ -21,7 +21,7 @@
             <el-input v-model="searchForm.username" placeholder="请输入姓名" clearable />
           </el-form-item>
           <el-form-item label="学院">
-            <el-select v-model="searchForm.college" placeholder="请选择学院" clearable>
+            <el-select v-model="searchForm.college" placeholder="请选择学院" clearable style="width: 180px;">
               <el-option label="计算机学院" value="计算机学院" />
               <el-option label="软件学院" value="软件学院" />
               <el-option label="数学学院" value="数学学院" />
@@ -29,7 +29,7 @@
             </el-select>
           </el-form-item>
           <el-form-item label="专业">
-            <el-select v-model="searchForm.major" placeholder="请选择专业" clearable>
+            <el-select v-model="searchForm.major" placeholder="请选择专业" clearable style="width: 200px;">
               <el-option label="计算机科学与技术" value="MAJOR_0" />
               <el-option label="软件工程" value="MAJOR_1" />
               <el-option label="数据科学与大数据技术" value="MAJOR_2" />
