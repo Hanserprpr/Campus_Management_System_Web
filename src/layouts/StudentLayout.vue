@@ -78,9 +78,11 @@ const handleLogout = () => {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning'
-  }).then(() => {
-    userStore.logout()
-    router.push('/login')
+  }).then((onful) => {
+    if(onful){
+      userStore.logout()
+      router.push('/login')
+    }
   })
 }
 </script>

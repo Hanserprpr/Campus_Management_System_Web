@@ -7,23 +7,25 @@ import type { Student, PageRequest, PageResponse } from '@/types'
 
 // 获取学生信息
 export function getStudentInfo() {
-  return request.get<Student>('/student/info')
+  return request.post<Student>('/student/getInfo')
 }
 
 // 更新学生信息
+//TODO
 export function updateStudentInfo(data: Partial<Student>) {
   return request.put('/student/info', data)
 }
 
 // 修改密码
 export function changePassword(data: { oldPassword: string; newPassword: string }) {
-  return request.post('/student/change-password', data)
+  return request.post('/user/updatePassword', data)
 }
 
 // 获取学生统计数据
-export function getStudentStats() {
-  return request.get('/student/stats')
-}
+// !TODO 没有这个接口
+// export function getStudentStats() {
+//   return request.get('/student/stats')
+// }
 
 // 获取今日课程 - 需要传入当前周和学期
 export function getTodayCourses(week: number, params: { term: string }) {

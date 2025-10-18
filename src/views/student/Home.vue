@@ -5,62 +5,13 @@
       <p class="date">{{ currentDate }}</p>
     </div>
     
-    <el-row :gutter="20" class="stats-row">
-      <el-col :span="6">
-        <el-card class="stat-card">
-          <div class="stat-content">
-            <el-icon class="stat-icon" color="#409eff"><Reading /></el-icon>
-            <div class="stat-info">
-              <div class="stat-value">{{ stats.courseCount }}</div>
-              <div class="stat-label">已选课程</div>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-      
-      <el-col :span="6">
-        <el-card class="stat-card">
-          <div class="stat-content">
-            <el-icon class="stat-icon" color="#67c23a"><Document /></el-icon>
-            <div class="stat-info">
-              <div class="stat-value">{{ stats.creditCount }}</div>
-              <div class="stat-label">已修学分</div>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-      
-      <el-col :span="6">
-        <el-card class="stat-card">
-          <div class="stat-content">
-            <el-icon class="stat-icon" color="#e6a23c"><TrophyBase /></el-icon>
-            <div class="stat-info">
-              <div class="stat-value">{{ stats.avgScore }}</div>
-              <div class="stat-label">平均成绩</div>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-      
-      <el-col :span="6">
-        <el-card class="stat-card">
-          <div class="stat-content">
-            <el-icon class="stat-icon" color="#f56c6c"><Calendar /></el-icon>
-            <div class="stat-info">
-              <div class="stat-value">{{ stats.todayCourses }}</div>
-              <div class="stat-label">今日课程</div>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
-    
-    <el-row :gutter="20" class="content-row">
-      <el-col :span="12">
+    <el-col class="content-col">
+      <el-col :span="24">
         <el-card class="content-card">
           <template #header>
             <div class="card-header">
               <span>今日课程</span>
+              <el-button style="margin-left: 18px;" @click="router.push('/student/schedule')"> 查看课表 </el-button>
             </div>
           </template>
           
@@ -84,7 +35,7 @@
         </el-card>
       </el-col>
       
-      <el-col :span="12">
+      <el-col :span="24">
         <el-card class="content-card">
           <template #header>
             <div class="card-header">
@@ -106,7 +57,7 @@
           <el-empty v-else description="暂无公告" />
         </el-card>
       </el-col>
-    </el-row>
+    </el-col>
   </div>
 </template>
 
@@ -115,10 +66,11 @@ import { ref, onMounted } from 'vue'
 import { Reading, Document, TrophyBase, Calendar } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { formatDate, getCurrentDate, getDayOfWeekName } from '@/utils/date'
-import { getStudentStats } from '@/api/student'
+//import { getStudentStats } from '@/api/student'
 import { getStudentNoticeList } from '@/api/notice'
 import { getCurrentTerm, getCurrentWeek } from '@/api/common'
 import type { Course, Announcement } from '@/types'
+import router from '@/router'
 
 const userStore = useUserStore()
 
@@ -134,25 +86,25 @@ const stats = ref({
 const todayCourses = ref<Course[]>([])
 const announcements = ref<Announcement[]>([])
 
-const fetchStats = async () => {
-  try {
-    const response = await getStudentStats()
-    if (response.code === 200 && response.data) {
-      stats.value = response.data
-    } else {
-      // 如果API返回错误，使用模拟数据
-      throw new Error('API返回错误')
-    }
-  } catch (error) {
-    console.warn('获取统计数据失败:', error)
-    stats.value = {
-      courseCount: 0,
-      creditCount: 0,
-      avgScore: 0,
-      todayCourses: 0
-    }
-  }
-}
+// const fetchStats = async () => {
+//   try {
+//     const response = await getStudentStats()
+//     if (response.code === 200 && response.data) {
+//       stats.value = response.data
+//     } else {
+//       // 如果API返回错误，使用模拟数据
+//       throw new Error('API返回错误')
+//     }
+//   } catch (error) {
+//     console.warn('获取统计数据失败:', error)
+//     stats.value = {
+//       courseCount: 0,
+//       creditCount: 0,
+//       avgScore: 0,
+//       todayCourses: 0
+//     }
+//   }
+// }
 
 const fetchTodayCourses = async () => {
   try {
@@ -192,7 +144,7 @@ const fetchAnnouncements = async () => {
 }
 
 onMounted(() => {
-  fetchStats()
+  //fetchStats()
   fetchTodayCourses()
   fetchAnnouncements()
 })
@@ -249,10 +201,11 @@ onMounted(() => {
   }
 }
 
-.content-row {
+.content-col {
+  width: 100%;
   .content-card {
     height: 400px;
-    
+    margin-bottom: 16px;
     :deep(.el-card__body) {
       height: calc(100% - 56px);
       overflow-y: auto;
