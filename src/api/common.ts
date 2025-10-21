@@ -39,6 +39,8 @@ export function addTerm(term?: string) {
   })
 }
 
+
+
 /**
  * 开放/关闭选课
  * @param term 学期

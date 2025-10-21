@@ -26,22 +26,22 @@
             </el-menu-item>
             
             <el-menu-item index="/student/personal">
-              <el-icon><User /></el-icon>
+              <el-icon><UserFilled /></el-icon>
               <span>个人中心</span>
             </el-menu-item>
-            
+
             <el-menu-item index="/student/schedule">
               <el-icon><Calendar /></el-icon>
               <span>课表查询</span>
             </el-menu-item>
-            
+
             <el-menu-item index="/student/course-selection">
               <el-icon><Reading /></el-icon>
               <span>选课系统</span>
             </el-menu-item>
-            
+
             <el-menu-item index="/student/grades">
-              <el-icon><Document /></el-icon>
+              <el-icon><DocumentCopy /></el-icon>
               <span>成绩查询</span>
             </el-menu-item>
           </el-menu>
@@ -64,7 +64,13 @@
 import { computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
-import { HomeFilled, User, Calendar, Reading, Document } from '@element-plus/icons-vue'
+import {
+  HomeFilled,
+  UserFilled,
+  Calendar,
+  Reading,
+  DocumentCopy
+} from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 
 const router = useRouter()

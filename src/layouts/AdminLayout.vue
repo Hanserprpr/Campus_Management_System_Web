@@ -24,27 +24,27 @@
               <el-icon><HomeFilled /></el-icon>
               <span>首页</span>
             </el-menu-item>
-            
+
             <el-menu-item index="/admin/personal">
-              <el-icon><User /></el-icon>
+              <el-icon><UserFilled /></el-icon>
               <span>个人中心</span>
             </el-menu-item>
-            
+
             <el-menu-item index="/admin/student-management">
-              <el-icon><UserFilled /></el-icon>
+              <el-icon><Avatar /></el-icon>
               <span>学生管理</span>
             </el-menu-item>
-            
+
             <el-menu-item index="/admin/teacher-management">
-              <el-icon><Avatar /></el-icon>
+              <el-icon><UserFilled /></el-icon>
               <span>教师管理</span>
             </el-menu-item>
-            
+
             <el-menu-item index="/admin/course-management">
               <el-icon><Reading /></el-icon>
               <span>课程管理</span>
             </el-menu-item>
-            
+
             <el-menu-item index="/admin/class-management">
               <el-icon><School /></el-icon>
               <span>班级管理</span>
@@ -69,7 +69,13 @@
 import { computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
-import { HomeFilled, User, UserFilled, Avatar, Reading, School } from '@element-plus/icons-vue'
+import {
+  HomeFilled,
+  UserFilled,
+  Avatar,
+  Reading,
+  School
+} from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 
 const router = useRouter()

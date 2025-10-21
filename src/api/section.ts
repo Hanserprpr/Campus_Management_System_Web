@@ -92,3 +92,17 @@ export function getSectionMember(id?: number): Promise<ApiResponse<any[]>> {
 export function getSectionInfo(id?: number): Promise<ApiResponse<any>> {
   return request.get('/section/getSectionInfo', { id })
 }
+
+/**
+ * 搜索班级
+ * @param params 搜索参数
+ * @returns 班级列表
+ */
+export function searchSections(params?: {
+  keyword?: string
+  grade?: string
+  page?: number
+  size?: number
+}): Promise<ApiResponse<SectionListResponse>> {
+  return request.get<SectionListResponse>('/section/search', params)
+}

@@ -109,7 +109,7 @@ export const request = {
   upload<T = any>(url: string, file: File, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
     const formData = new FormData()
     formData.append('file', file)
-    
+
     return service.post(url, formData, {
       headers: {
         'Content-Type': 'multipart/form-data'

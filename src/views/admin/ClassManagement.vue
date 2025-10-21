@@ -212,7 +212,8 @@ import {
   addSection,
   updateSection,
   deleteSection as deleteSectionApi,
-  assignSection
+  assignSection,
+  searchSections
 } from '@/api/section'
 import { getTeacherList, searchUsers } from '@/api/admin'
 import type { SectionInfo, UserInfo } from '@/types'
@@ -293,7 +294,10 @@ const fetchSectionList = async () => {
     if (searchForm.grade) params.grade = searchForm.grade
     if (searchForm.keyword) params.keyword = searchForm.keyword
 
-    const response = await getSectionList(params)
+    // 如果有搜索条件，使用搜索接口，否则使用普通列表接口
+    const response = searchForm.keyword || searchForm.grade
+      ? await searchSections(params)
+      : await getSectionList(params)
 
     if (response.code === 200 && response.data) {
       sectionList.value = response.data.section || []

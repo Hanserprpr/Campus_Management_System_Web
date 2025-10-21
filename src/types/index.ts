@@ -230,11 +230,9 @@ export interface Announcement {
  * 学期信息
  */
 export interface Term {
-  id: number
-  name: string
-  startDate: string
-  endDate: string
-  isCurrent: boolean
+  term: string
+  open: boolean
+  current: boolean
 }
 
 /**

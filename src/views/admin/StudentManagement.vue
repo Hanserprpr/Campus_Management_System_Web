@@ -236,9 +236,9 @@ import { ref, reactive, onMounted } from 'vue'
 import { Plus } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
-import { addUser, updateUser, searchUsers, getStudentList as getAdminStudentList } from '@/api/admin'
+import { addUser, updateUser, searchUsers, getStudentList } from '@/api/admin'
 import { deleteStudent as deleteStudentApi } from '@/api/student'
-import type { UserInfo, PageRequest, PageResponse } from '@/types'
+import type { UserInfo } from '@/types'
 
 const loading = ref(false)
 const showAddDialog = ref(false)
@@ -360,7 +360,7 @@ const fetchStudentList = async () => {
         listParams.major = majorMap[searchForm.major] || searchForm.major
       }
 
-      response = await getAdminStudentList(listParams)
+      response = await getStudentList(listParams)
     }
 
     if (response.code === 200 && response.data) {

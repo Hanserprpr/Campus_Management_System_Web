@@ -23,14 +23,15 @@
             <el-select v-model="searchForm.term" placeholder="请选择学期" clearable style="width: 150px;">
               <el-option
                 v-for="term in termList"
-                :key="term.id"
-                :label="term.name"
-                :value="term.name"
+                :key="term.term"
+                :label="term.term"
+                :value="term.term"
               />
             </el-select>
           </el-form-item>
           <el-form-item label="状态">
             <el-select v-model="searchForm.status" placeholder="请选择状态" clearable style="width: 120px;">
+              <el-option label="全部" value="" />
               <el-option label="待审批" value="待审批" />
               <el-option label="已通过" value="已通过" />
               <el-option label="已拒绝" value="已拒绝" />
@@ -179,7 +180,8 @@ import {
   getPendingCourses,
   approveCourse as approveCourseApi,
   deleteApprovedCourse,
-  searchCourses
+  searchCourses,
+  getAllCourses
 } from '@/api/course'
 import { getTermList, getCurrentTerm } from '@/api/common'
 import { autoSchedule } from '@/api/course'
@@ -268,18 +270,58 @@ const fetchCourseList = async () => {
   loading.value = true
   try {
     let response: any
+    let allCourses: any[] = []
 
-    if (searchForm.keyword || searchForm.term || searchForm.status) {
-      // 使用搜索API
+    // 如果只是按状态筛选"待审批"，使用专门的接口
+    if (searchForm.status === '待审批' && !searchForm.keyword && !searchForm.term) {
+      response = await getPendingCourses()
+    } else if (searchForm.keyword) {
+      // 如果有关键词或学期搜索，使用搜索API
       const searchParams: any = {}
       if (searchForm.keyword) searchParams.keyword = searchForm.keyword
       if (searchForm.term) searchParams.term = searchForm.term
-      if (searchForm.status) searchParams.type = searchForm.status
+      // 注意：搜索API可能不支持状态筛选，所以先不传type参数
 
       response = await searchCourses(searchParams)
+
+      // 如果有状态筛选，在客户端进行过滤
+      if (response.code === 200 && response.data && searchForm.status) {
+        const filteredData = Array.isArray(response.data)
+          ? response.data.filter((course: any) => course.status === searchForm.status)
+          : (response.data.list || []).filter((course: any) => course.status === searchForm.status)
+
+        if (Array.isArray(response.data)) {
+          response.data = filteredData
+        } else {
+          response.data.list = filteredData
+          response.data.total = filteredData.length
+        }
+      }
     } else {
-      // 获取待审批课程
-      response = await getPendingCourses()
+      // 获取所有课程列表
+      const listParams: any = {
+        pageNum: pagination.page,
+        pageSize: pagination.size
+      }
+      // 如果有学期筛选，添加学期参数
+      if (searchForm.term) {
+        listParams.term = searchForm.term
+      }
+      response = await getAllCourses(listParams)
+
+      // 如果有状态筛选，在客户端进行过滤
+      if (response.code === 200 && response.data && searchForm.status) {
+        const filteredData = Array.isArray(response.data)
+          ? response.data.filter((course: any) => course.status === searchForm.status)
+          : (response.data.list || []).filter((course: any) => course.status === searchForm.status)
+
+        if (Array.isArray(response.data)) {
+          response.data = filteredData
+        } else {
+          response.data.list = filteredData
+          response.data.total = filteredData.length
+        }
+      }
     }
 
     if (response.code === 200 && response.data) {

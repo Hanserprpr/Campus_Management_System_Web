@@ -1,5 +1,5 @@
 import { request } from '@/utils/request'
-import type { Course, PageRequest, PageResponse } from '@/types'
+import type { Course, PageRequest } from '@/types'
 
 /**
  * 课程相关 API
@@ -106,9 +106,13 @@ export function getCourseReason(courseId: number) {
   return request.get(`/class/getReason/${courseId}`)
 }
 
-// 管理员：获取所有课程
-export function getAllCourses(params?: PageRequest) {
-  return request.get<PageResponse<Course>>('/admin/courses', params)
+// 管理员：获取所有课程列表
+export function getAllCourses(params?: {
+  term?: string
+  pageNum?: number
+  pageSize?: number
+}) {
+  return request.get('/class/list', params)
 }
 
 // 管理员：审核课程申请
