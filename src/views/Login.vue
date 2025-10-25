@@ -63,6 +63,32 @@
                 {{ loading ? '登录中...' : '登录' }}
               </el-button>
             </el-form-item>
+
+            <el-form-item>
+              <el-row>
+                <el-button
+                  class="quick-login-buttons"
+                  :loading="loading"
+                  @click="quickLogin(1)"
+                >
+                  {{ loading? '登录中...' : '学生登录' }}
+                </el-button>
+                <el-button
+                  class="quick-login-buttons"
+                  :loading="loading"
+                  @click="quickLogin(2)"
+                >
+                  {{ loading? '登录中...' : '教师登录' }}
+                </el-button>
+                <el-button
+                  class="quick-login-buttons"
+                  :loading="loading"
+                  @click="quickLogin(3)"
+                >
+                  {{ loading? '登录中...' : '管理员登录' }}
+                </el-button>
+              </el-row>
+            </el-form-item>
           </el-form>
         </div>
       </div>
@@ -73,7 +99,7 @@
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage, FormInstance, FormRules } from 'element-plus'
+import { ElMessage, FormInstance, FormRules, ElRow } from 'element-plus'
 import { User, Lock } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { useAppStore } from '@/stores/app'
@@ -147,6 +173,22 @@ const handleLogin = async () => {
       }
     }
   })
+}
+
+const quickLogin = (type : number)=>{
+  let username: string;
+  let password: string = "123456";
+  loginType.value = 'simple';
+  if( type == 1){
+    username = "202400000001"
+  }else if(type == 2){
+    username = "190100000000"
+  }else{
+    username = "1"
+  }
+  loginForm.stuId = username;
+  loginForm.password = password;
+  handleLogin();
 }
 </script>
 
@@ -233,6 +275,10 @@ const handleLogin = async () => {
 .login-button {
   width: 100%;
   margin-top: 8px;
+}
+
+.quick-login-buttons{
+  margin-left: 5px;
 }
 </style>
 

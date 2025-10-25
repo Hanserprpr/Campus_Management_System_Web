@@ -131,8 +131,8 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { searchCourses, getUnselectedCourses, selectCourse, dropCourse, getCourseResults } from '@/api/course'
+import { ElMessage, ElMessageBox, TabPaneName } from 'element-plus'
+import { searchCourses, getUnselectedCourses, getCourseResults, selectCourse, dropCourse } from '@/api/course'
 import type { Course } from '@/types'
 
 const activeTab = ref('unselected')
@@ -207,7 +207,7 @@ const loadSelectedCourses = async () => {
   }
 }
 
-const handleTabChange = (tab: string) => {
+const handleTabChange = (tab: TabPaneName) => {
   if (tab === 'unselected') {
     loadUnselectedCourses()
   } else {
