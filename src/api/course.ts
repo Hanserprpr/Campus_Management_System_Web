@@ -1,5 +1,6 @@
 import { request } from '@/utils/request'
 import type { Course, PageRequest } from '@/types'
+import { useAppStore } from '@/stores/app'
 
 /**
  * 课程相关 API
@@ -46,8 +47,17 @@ export function searchCourses(params: {
 }
 
 // 获取课表
-export function getCourseSchedule() {
-  return request.get('/course-selection/schedule')
+export function getCourseSchedule(week: number = 1, param:{term?:string}) {
+  if( !param ){
+    param = {}
+  }
+  if( !param.term || param.term == null || param.term == undefined){
+    param.term = useAppStore().$state.currentTerm;
+  }
+  return request.get(
+    `/course-selection/schedule/${week}`,
+    param
+  )
 }
 
 // 教师：获取我的课程列表

@@ -4,18 +4,29 @@
       <template #header>
         <div class="card-header">
           <span>我的课表</span>
+          
         </div>
       </template>
       
       <div class="schedule-container">
-        <el-empty description="课表功能待实现" />
+        
       </div>
     </el-card>
   </div>
 </template>
 
 <script setup lang="ts">
-// 课表功能待实现
+import { getCourseSchedule } from '@/api/course';
+import { useAppStore } from '@/stores/app';
+import { Course } from '@/types';
+
+// 课表功能待实现 time = (day-1)*5 + classOrder
+const appStore = useAppStore();
+console.log( appStore.currentTerm )
+console.log( 111)
+const res = await getCourseSchedule(1, { term: appStore.currentTerm });
+const courses = ref<Course[]>( res.data as Course[] );
+
 </script>
 
 <style lang="scss" scoped>
