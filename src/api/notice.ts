@@ -90,3 +90,5 @@ export function editNotice(params: PublishNoticeParams): Promise<ApiResponse<any
 export function deleteNotice(id?: number): Promise<ApiResponse<any>> {
   return request.get('/notice/close', { id })
 }
+
+

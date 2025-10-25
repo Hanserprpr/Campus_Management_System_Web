@@ -85,3 +85,41 @@ export function getTeacherStudentNum(params?: {
 }): Promise<ApiResponse<any>> {
   return request.get('/admin/getNum', params)
 }
+
+/**
+ * 删除用户
+ * @param userId 用户ID
+ * @returns 响应数据
+ */
+export function deleteUser(userId: number): Promise<ApiResponse<null>> {
+  return request.post<null>('/admin/deleteUser', null, {
+    params: { userId }
+  })
+}
+
+/**
+ * 获取用户详细信息
+ * @param userId 用户ID
+ * @returns 用户详细信息
+ */
+export function getUserInfo(userId: number): Promise<ApiResponse<UserInfo>> {
+  return request.get<UserInfo>('/admin/getUserInfo', { userId })
+}
+
+/**
+ * 批量导入用户（Excel）
+ * @param file Excel文件
+ * @returns 响应数据
+ */
+export function uploadUserExcel(file: File): Promise<ApiResponse<any>> {
+  const formData = new FormData()
+  formData.append('file', file)
+  return request.post<any>('/admin/upload', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  })
+}
+
+
+
