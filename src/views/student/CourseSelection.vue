@@ -132,7 +132,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { searchCourses, getUnselectedCourses, getSelectedCourses, selectCourse, dropCourse } from '@/api/course'
+import { searchCourses, getUnselectedCourses, selectCourse, dropCourse, getCourseResults } from '@/api/course'
 import type { Course } from '@/types'
 
 const activeTab = ref('unselected')
@@ -169,9 +169,7 @@ const loadUnselectedCourses = async () => {
     const response = searchForm.keyword || searchForm.category
       ? await searchCourses({
           keyword: searchForm.keyword,
-          category: searchForm.category,
-          page: unselectedPage.page,
-          size: unselectedPage.size
+          type: searchForm.category,
         })
       : await getUnselectedCourses({
           page: unselectedPage.page,
@@ -179,8 +177,8 @@ const loadUnselectedCourses = async () => {
         })
 
     if (response.code === 200 && response.data) {
-      unselectedCourses.value = response.data.list || response.data || []
-      unselectedPage.total = response.data.total || response.data.length || 0
+      unselectedCourses.value = response.data || []
+      unselectedPage.total = response.data.length || 0
     }
   } catch (error) {
     console.error('获取可选课程失败:', error)
@@ -193,14 +191,14 @@ const loadUnselectedCourses = async () => {
 const loadSelectedCourses = async () => {
   loading.value = true
   try {
-    const response = await getSelectedCourses({
+    const response = await getCourseResults({
       page: selectedPage.page,
       size: selectedPage.size
     })
     
     if (response.code === 200 && response.data) {
-      selectedCourses.value = response.data.list || []
-      selectedPage.total = response.data.total || 0
+      selectedCourses.value = response.data || []
+      selectedPage.total = response.data.length || 0
     }
   } catch (error) {
     console.error('获取已选课程失败:', error)

@@ -11,6 +11,7 @@ export function getUnselectedCourses(params?: PageRequest) {
 }
 
 // 获取已选课程列表
+// !TODO没有这个接口
 export function getSelectedCourses(params?: PageRequest) {
   return request.get<Course[]>('/course-selection/choose', params)
 }
