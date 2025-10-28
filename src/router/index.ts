@@ -150,18 +150,30 @@ const router = createRouter({
 // 路由守卫
 router.beforeEach((to, from, next) => {
   const userStore = useUserStore()
-  
+
+  // 初始化用户状态（从本地存储恢复）
+  userStore.checkAuth()
+
+  console.log('路由守卫检查:', {
+    to: to.path,
+    isLoggedIn: userStore.isLoggedIn,
+    identity: userStore.identity,
+    requiresAuth: to.meta.requiresAuth
+  })
+
   // 检查是否需要认证
   if (to.meta.requiresAuth) {
     if (!userStore.isLoggedIn) {
       // 未登录，跳转到登录页
+      console.log('未登录，跳转到登录页')
       next('/login')
       return
     }
-    
+
     // 检查身份权限
     if (to.meta.identity !== undefined && to.meta.identity !== userStore.identity) {
       // 权限不足，跳转到对应的首页
+      console.log('权限不足，跳转到对应首页')
       switch (userStore.identity) {
         case 0:
           next('/admin')
@@ -178,9 +190,10 @@ router.beforeEach((to, from, next) => {
       return
     }
   }
-  
+
   // 已登录用户访问登录页，跳转到对应的首页
   if (to.path === '/login' && userStore.isLoggedIn) {
+    console.log('已登录用户访问登录页，跳转到对应首页')
     switch (userStore.identity) {
       case 0:
         next('/admin')
@@ -196,7 +209,7 @@ router.beforeEach((to, from, next) => {
     }
     return
   }
-  
+
   next()
 })
 

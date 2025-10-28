@@ -41,12 +41,12 @@
             </el-menu-item>
 
             <el-menu-item index="/admin/course-management">
-              <el-icon><Reading /></el-icon>
+              <el-icon><Notebook /></el-icon>
               <span>课程管理</span>
             </el-menu-item>
 
             <el-menu-item index="/admin/class-management">
-              <el-icon><School /></el-icon>
+              <el-icon><OfficeBuilding /></el-icon>
               <span>班级管理</span>
             </el-menu-item>
           </el-menu>
@@ -73,8 +73,8 @@ import {
   HomeFilled,
   UserFilled,
   Avatar,
-  Reading,
-  School
+  Notebook,
+  OfficeBuilding
 } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 
@@ -89,9 +89,16 @@ const handleLogout = () => {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning'
-  }).then(() => {
-    userStore.logout()
-    router.push('/login')
+  }).then(async () => {
+    try {
+      await userStore.logout()
+      // 使用 replace 而不是 push，避免用户通过后退按钮回到登录前的页面
+      await router.replace('/login')
+    } catch (error) {
+      console.error('退出登录失败:', error)
+      // 即使API调用失败，也要清除本地状态并跳转
+      await router.replace('/login')
+    }
   })
 }
 </script>
@@ -142,6 +149,25 @@ const handleLogout = () => {
 .sidebar-menu {
   border-right: none;
   height: 100%;
+
+  .el-menu-item {
+    .el-icon {
+      color: #606266;
+      font-size: 18px;
+    }
+
+    &.is-active {
+      .el-icon {
+        color: #409eff;
+      }
+    }
+
+    &:hover {
+      .el-icon {
+        color: #409eff;
+      }
+    }
+  }
 }
 
 .layout-main {
