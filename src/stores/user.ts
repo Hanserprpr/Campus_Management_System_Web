@@ -92,7 +92,8 @@ export const useUserStore = defineStore('user', () => {
   async function logout() {
     try {
       // 调用登出API
-      await logoutApi()
+      if(isLoggedIn)
+        await logoutApi()
     } catch (error) {
       console.error('登出API调用失败:', error)
     } finally {

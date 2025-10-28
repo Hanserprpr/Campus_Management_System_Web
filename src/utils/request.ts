@@ -60,13 +60,13 @@ service.interceptors.response.use(
       
       switch (status) {
         case 401:
-          ElMessage.error('登录已过期，请重新登录')
-          const userStore = useUserStore()
-          userStore.logout()
-          router.push('/login')
-          break
         case 403:
-          ElMessage.error('没有权限访问')
+          ElMessage.error('登录已过期，请重新登录')
+          if( useUserStore().isLoggedIn)
+            {const userStore = useUserStore()
+            userStore.logout()
+          }
+          router.push('/login')
           break
         case 404:
           ElMessage.error('请求的资源不存在')
