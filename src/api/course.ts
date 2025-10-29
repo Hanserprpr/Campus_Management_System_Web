@@ -54,8 +54,8 @@ export function getCourseSchedule(week: number = 1, param:{term?:string}) {
   if( !param.term || param.term == null || param.term == undefined){
     param.term = useAppStore().$state.currentTerm;
   }
-  return request.get(
-    `/course-selection/schedule/${week}`,
+  return request.get<Course[]>(
+    `/class/getClassSchedule/${week}`,
     param
   )
 }
