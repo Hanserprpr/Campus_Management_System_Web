@@ -311,10 +311,10 @@ const formRules: FormRules = {
 // 获取专业名称
 const getMajorName = (major: string | number) => {
   const majorMap: Record<string, string> = {
-    'MAJOR_0': '计算机科学与技术',
-    'MAJOR_1': '软件工程',
-    'MAJOR_2': '数据科学与大数据技术',
-    'MAJOR_3': '人工智能',
+    'MAJOR_0': '软件工程',
+    'MAJOR_1': '数字媒体技术',
+    'MAJOR_2': '大数据',
+    'MAJOR_3': 'AI',
     '0': '软件工程',
     '1': '数字媒体技术',
     '2': '大数据',
