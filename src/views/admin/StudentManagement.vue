@@ -20,19 +20,11 @@
           <el-form-item label="姓名">
             <el-input v-model="searchForm.username" placeholder="请输入姓名" clearable />
           </el-form-item>
-          <el-form-item label="学院">
-            <el-select v-model="searchForm.college" placeholder="请选择学院" clearable style="width: 180px;">
-              <el-option label="计算机学院" value="计算机学院" />
-              <el-option label="软件学院" value="软件学院" />
-              <el-option label="数学学院" value="数学学院" />
-              <el-option label="物理学院" value="物理学院" />
-            </el-select>
-          </el-form-item>
           <el-form-item label="专业">
             <el-select v-model="searchForm.major" placeholder="请选择专业" clearable style="width: 200px;">
-              <el-option label="计算机科学与技术" value="MAJOR_0" />
-              <el-option label="软件工程" value="MAJOR_1" />
-              <el-option label="数据科学与大数据技术" value="MAJOR_2" />
+              <el-option label="软件工程" value="MAJOR_0" />
+              <el-option label="数字媒体技术" value="MAJOR_1" />
+              <el-option label="大数据" value="MAJOR_2" />
               <el-option label="人工智能" value="MAJOR_3" />
             </el-select>
           </el-form-item>
@@ -164,9 +156,9 @@
           <el-col :span="12">
             <el-form-item label="专业" prop="major">
               <el-select v-model="studentForm.major" placeholder="请选择专业">
-                <el-option label="计算机科学与技术" value="MAJOR_0" />
+                <el-option label="软件工程" value="MAJOR_0" />
                 <el-option label="软件工程" value="MAJOR_1" />
-                <el-option label="数据科学与大数据技术" value="MAJOR_2" />
+                <el-option label="大数据" value="MAJOR_2" />
                 <el-option label="人工智能" value="MAJOR_3" />
               </el-select>
             </el-form-item>
@@ -311,7 +303,7 @@ const formRules: FormRules = {
 // 获取专业名称
 const getMajorName = (major: string | number) => {
   const majorMap: Record<string, string> = {
-    'MAJOR_0': '软件工程',
+    'MAJOR_0': '数字媒体技术',
     'MAJOR_1': '数字媒体技术',
     'MAJOR_2': '大数据',
     'MAJOR_3': 'AI',
