@@ -1,5 +1,6 @@
 import { request } from '@/utils/request'
 import type { Course, PageRequest } from '@/types'
+import { useAppStore } from '@/stores/app'
 
 /**
  * 课程相关 API
@@ -11,6 +12,7 @@ export function getUnselectedCourses(params?: PageRequest) {
 }
 
 // 获取已选课程列表
+// !TODO没有这个接口
 export function getSelectedCourses(params?: PageRequest) {
   return request.get<Course[]>('/course-selection/choose', params)
 }
@@ -45,8 +47,17 @@ export function searchCourses(params: {
 }
 
 // 获取课表
-export function getCourseSchedule() {
-  return request.get('/course-selection/schedule')
+export function getCourseSchedule(week: number = 1, param:{term?:string}) {
+  if( !param ){
+    param = {}
+  }
+  if( !param.term || param.term == null || param.term == undefined){
+    param.term = useAppStore().$state.currentTerm;
+  }
+  return request.get<Course[]>(
+    `/class/getClassSchedule/${week}`,
+    param
+  )
 }
 
 // 教师：获取我的课程列表

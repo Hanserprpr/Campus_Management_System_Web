@@ -216,7 +216,7 @@ export interface Notice {
   updateTime?: string;
   publisher?: string;
 }
- */
+
 export interface Announcement {
   id: number
   title: string

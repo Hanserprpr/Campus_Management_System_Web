@@ -84,11 +84,12 @@ const handleLogout = () => {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning'
-  }).then((onful) => {
-    if(onful){
-      userStore.logout()
-      router.push('/login')
-    }
+  }).then(async () => {
+    console.log("退出登录")
+    await userStore.logout()
+    router.push('/login')
+  }).catch(()=>{
+
   })
 }
 </script>
