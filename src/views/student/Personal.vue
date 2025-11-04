@@ -160,7 +160,7 @@
     </el-dialog>
 
     <!-- 修改邮箱对话框 -->
-    <el-dialog v-model="showEmailDialog" title="修改邮箱" width="400px">
+    <el-dialog v-modeMAJOR_1l="showEmailDialog" title="修改邮箱" width="400px">
       <el-form
         ref="emailFormRef"
         :model="emailForm"
@@ -318,9 +318,9 @@ const phoneRules: FormRules = {
 // 获取专业名称
 const getMajorName = (major: string) => {
   const majorMap: Record<string, string> = {
-    'MAJOR_0': '计算机科学与技术',
-    'MAJOR_1': '软件工程',
-    'MAJOR_2': '数据科学与大数据技术',
+    'MAJOR_0': '软件工程',
+    'MAJOR_1': '数字媒体技术',
+    'MAJOR_2': '大数据',
     'MAJOR_3': '人工智能'
   }
   return majorMap[major] || major
