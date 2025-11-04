@@ -23,7 +23,7 @@
                 value : 'id',
                 label : 'label'
               }"></el-select>
-              <el-button @click="getCourses">刷新</el-button>
+            <el-button @click="getCourses">刷新</el-button>
           </el-row>
         </div>
       </template>
