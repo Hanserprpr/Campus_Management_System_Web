@@ -30,9 +30,9 @@
           </el-form-item>
           <el-form-item label="专业">
             <el-select v-model="searchForm.major" placeholder="请选择专业" clearable style="width: 200px;">
-              <el-option label="计算机科学与技术" value="MAJOR_0" />
+              <el-option label="软件工程" value="MAJOR_0" />
               <el-option label="软件工程" value="MAJOR_1" />
-              <el-option label="数据科学与大数据技术" value="MAJOR_2" />
+              <el-option label="大数据" value="MAJOR_2" />
               <el-option label="人工智能" value="MAJOR_3" />
             </el-select>
           </el-form-item>
@@ -125,9 +125,9 @@
 
         <el-form-item label="专业" prop="major">
           <el-select v-model="sectionForm.major" placeholder="请选择专业">
-            <el-option label="计算机科学与技术" value="MAJOR_0" />
+            <el-option label="软件工程" value="MAJOR_0" />
             <el-option label="软件工程" value="MAJOR_1" />
-            <el-option label="数据科学与大数据技术" value="MAJOR_2" />
+            <el-option label="大数据" value="MAJOR_2" />
             <el-option label="人工智能" value="MAJOR_3" />
           </el-select>
         </el-form-item>
@@ -274,9 +274,9 @@ const formRules: FormRules = {
 // 专业名称映射
 const getMajorName = (major: string) => {
   const majorMap: Record<string, string> = {
-    'MAJOR_0': '计算机科学与技术',
-    'MAJOR_1': '软件工程',
-    'MAJOR_2': '数据科学与大数据技术',
+    'MAJOR_0': '软件工程',
+    'MAJOR_1': '数字媒体技术',
+    'MAJOR_2': '大数据',
     'MAJOR_3': '人工智能'
   }
   return majorMap[major] || major

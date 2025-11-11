@@ -11,6 +11,10 @@ export function exportToExcel<T = any>(
   filename: string = 'export.xlsx',
   sheetName: string = 'Sheet1'
 ): void {
+  if(!filename.endsWith('.xlsx')){
+    filename += '.xlsx'
+  }
+
   // 创建工作簿
   const wb = XLSX.utils.book_new()
   

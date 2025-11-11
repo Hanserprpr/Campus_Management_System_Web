@@ -14,7 +14,7 @@ export function getCurrentTerm() {
   return request.get('/term/getCurrentTerm')
 }
 
-// 获取当前教学周
+// 获取当前教学周 !TODO 没有这个接口
 export function getCurrentWeek(term: string) {
   return request.get('/term/getCurrentWeek', { term })
 }

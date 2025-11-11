@@ -24,13 +24,13 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'personal',
         name: 'StudentPersonal',
-        component: () => import('@/views/student/Personal.vue'),
+        component: () => import('@/views/common/Personal.vue'),
         meta: { title: '个人中心' }
       },
       {
         path: 'schedule',
         name: 'StudentSchedule',
-        component: () => import('@/views/student/Schedule.vue'),
+        component: () => import('@/views/common/Schedule.vue'),
         meta: { title: '课表查询' }
       },
       {
@@ -63,13 +63,13 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'personal',
         name: 'TeacherPersonal',
-        component: () => import('@/views/teacher/Personal.vue'),
+        component: () => import('@/views/common/Personal.vue'),
         meta: { title: '个人中心' }
       },
       {
         path: 'schedule',
         name: 'TeacherSchedule',
-        component: () => import('@/views/teacher/Schedule.vue'),
+        component: () => import('@/views/common/Schedule.vue'),
         meta: { title: '课表查询' }
       },
       {
@@ -102,7 +102,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'personal',
         name: 'AdminPersonal',
-        component: () => import('@/views/admin/Personal.vue'),
+        component: () => import('@/views/common/Personal.vue'),
         meta: { title: '个人中心' }
       },
       {

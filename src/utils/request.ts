@@ -62,8 +62,8 @@ service.interceptors.response.use(
         case 401:
         case 403:
           ElMessage.error('登录已过期，请重新登录')
-          if( useUserStore().isLoggedIn)
-            {const userStore = useUserStore()
+          if( useUserStore().isLoggedIn){
+            const userStore = useUserStore()
             userStore.logout()
           }
           router.push('/login')

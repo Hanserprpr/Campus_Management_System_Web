@@ -1,5 +1,22 @@
 <template>
   <div class="page-container">
+    <el-card style="margin-bottom: 15px;">
+      <div>
+        <el-select 
+          class="select-list"
+          v-model="selectedTerm"
+          :options="terms"
+          @change="fetchGrades"
+          :props="{
+            value : 'term',
+            label : 'term'
+          }"
+        />
+        <el-button @click="fetchGrades">
+          刷新
+        </el-button>
+      </div>
+    </el-card>
     <!-- 成绩统计卡片 -->
     <el-row :gutter="20" class="stats-row">
       <el-col :span="6">
@@ -7,7 +24,7 @@
           <div class="stat-content">
             <el-icon class="stat-icon" color="#409eff"><TrophyBase /></el-icon>
             <div class="stat-info">
-              <div class="stat-value">{{ gradeStats.gpa || '0.00' }}</div>
+              <div class="stat-value">{{ gradeStats.averCredits.toFixed(2) || '0.00' }}</div>
               <div class="stat-label">总GPA</div>
             </div>
           </div>
@@ -19,7 +36,7 @@
           <div class="stat-content">
             <el-icon class="stat-icon" color="#67c23a"><Document /></el-icon>
             <div class="stat-info">
-              <div class="stat-value">{{ gradeStats.totalCredits || 0 }}</div>
+              <div class="stat-value">{{ gradeStats.totalPoint || 0 }}</div>
               <div class="stat-label">总学分</div>
             </div>
           </div>
@@ -31,8 +48,8 @@
           <div class="stat-content">
             <el-icon class="stat-icon" color="#e6a23c"><Reading /></el-icon>
             <div class="stat-info">
-              <div class="stat-value">{{ gradeStats.passedCourses || 0 }}</div>
-              <div class="stat-label">通过课程</div>
+              <div class="stat-value">{{ gradeStats.totalClass || 0 }}</div>
+              <div class="stat-label">已修课程</div>
             </div>
           </div>
         </el-card>
@@ -41,10 +58,10 @@
       <el-col :span="6">
         <el-card class="stat-card">
           <div class="stat-content">
-            <el-icon class="stat-icon" color="#f56c6c"><Warning /></el-icon>
+            <el-icon class="stat-icon" color="#f56c6c"><User /></el-icon>
             <div class="stat-info">
-              <div class="stat-value">{{ gradeStats.failedCourses || 0 }}</div>
-              <div class="stat-label">未通过课程</div>
+              <div class="stat-value">{{ gradeStats.pointRank || 0 }}</div>
+              <div class="stat-label">排名</div>
             </div>
           </div>
         </el-card>
@@ -56,14 +73,6 @@
         <div class="card-header">
           <span>成绩查询</span>
           <div class="header-actions">
-            <el-select v-model="selectedTerm" placeholder="选择学期" @change="fetchGrades">
-              <el-option
-                v-for="term in terms"
-                :key="term"
-                :label="term"
-                :value="term"
-              />
-            </el-select>
             <el-button type="primary" @click="handleExport">导出成绩</el-button>
           </div>
         </div>
@@ -76,14 +85,14 @@
           stripe
           style="width: 100%"
         >
-          <el-table-column prop="courseName" label="课程名称" min-width="150" />
-          <el-table-column prop="courseCode" label="课程代码" width="120" />
-          <el-table-column prop="teacherName" label="授课教师" width="120" />
-          <el-table-column prop="credits" label="学分" width="80" />
-          <el-table-column prop="courseType" label="课程类型" width="100" />
+          <el-table-column prop="className" label="课程名称" min-width="150" />
+          <el-table-column prop="classNum" label="课程号" width="120" />
+          <el-table-column prop="teacher" label="授课教师" width="120" />
+          <el-table-column prop="point" label="学分" width="80" />
+          <el-table-column prop="type" label="课程类型" width="100" />
           <el-table-column label="平时成绩" width="100">
             <template #default="{ row }">
-              {{ row.regularScore || '-' }}
+              {{ row.regular || '-' }}
             </template>
           </el-table-column>
           <el-table-column label="期末成绩" width="100">
@@ -93,24 +102,12 @@
           </el-table-column>
           <el-table-column label="总成绩" width="100">
             <template #default="{ row }">
-              <span :class="getScoreClass(row.totalScore)">
-                {{ row.totalScore || '-' }}
+              <span :class="getScoreClass(row.grade)">
+                {{ row.grade || '-' }}
               </span>
             </template>
           </el-table-column>
-          <el-table-column label="绩点" width="80">
-            <template #default="{ row }">
-              {{ row.gradePoint || '-' }}
-            </template>
-          </el-table-column>
-          <el-table-column label="等级" width="80">
-            <template #default="{ row }">
-              <el-tag :type="getGradeType(row.grade)">
-                {{ row.grade || '-' }}
-              </el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column prop="term" label="学期" width="120" />
+          <el-table-column prop="rank" label="排名" width="120" />
         </el-table>
 
         <div v-if="gradeList.length === 0 && !loading" class="empty-container">
@@ -123,43 +120,27 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import { TrophyBase, Document, Reading, Warning } from '@element-plus/icons-vue'
+import { TrophyBase, Document, Reading, User } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
-import { getGradeMessage } from '@/api/grade'
+import { getGradeList, getGradeMessage, Grade, GradeStats } from '@/api/grade'
 import { exportToExcel } from '@/utils/export'
+import { Term } from '@/types'
+import { getTermList } from '@/api/common'
 
 const loading = ref(false)
-const selectedTerm = ref('')
-const terms = ref(['2023-2024-1', '2023-2024-2', '2024-2025-1'])
+const selectedTerm = ref('2024-2025-1')
+const terms = ref<Term[]>()
 
-const gradeStats = reactive({
-  gpa: 0,
-  totalCredits: 0,
-  passedCourses: 0,
-  failedCourses: 0
+const gradeStats = reactive<GradeStats>({
+  totalPoint: 0,
+  totalClass: 0,
+  pointRank: 0,
+  averCredits: 0
 })
 
-const gradeList = ref<any[]>([])
+const gradeList = ref<Grade[]>([])
 
-// 获取成绩等级类型
-const getGradeType = (grade: string) => {
-  switch (grade) {
-    case 'A':
-    case 'A+':
-      return 'success'
-    case 'B':
-    case 'B+':
-      return 'primary'
-    case 'C':
-    case 'C+':
-      return 'warning'
-    case 'D':
-    case 'F':
-      return 'danger'
-    default:
-      return 'info'
-  }
-}
+
 
 // 获取成绩样式类
 const getScoreClass = (score: number) => {
@@ -174,58 +155,14 @@ const getScoreClass = (score: number) => {
 const fetchGrades = async () => {
   loading.value = true
   try {
-    const response = await getGradeMessage()
+    const response = await getGradeMessage(selectedTerm.value);
     if (response.code === 200 && response.data) {
       // 更新统计数据
       Object.assign(gradeStats, response.data)
-
-      // 模拟成绩列表数据
-      gradeList.value = [
-        {
-          courseName: '高等数学A',
-          courseCode: 'MATH001',
-          teacherName: '张教授',
-          credits: 4,
-          courseType: '必修',
-          regularScore: 85,
-          finalScore: 88,
-          totalScore: 87,
-          gradePoint: 3.7,
-          grade: 'B+',
-          term: '2023-2024-1'
-        },
-        {
-          courseName: '程序设计基础',
-          courseCode: 'CS001',
-          teacherName: '李教授',
-          credits: 3,
-          courseType: '必修',
-          regularScore: 92,
-          finalScore: 95,
-          totalScore: 94,
-          gradePoint: 4.0,
-          grade: 'A',
-          term: '2023-2024-1'
-        },
-        {
-          courseName: '大学英语',
-          courseCode: 'ENG001',
-          teacherName: '王教授',
-          credits: 2,
-          courseType: '必修',
-          regularScore: 78,
-          finalScore: 82,
-          totalScore: 80,
-          gradePoint: 3.0,
-          grade: 'B',
-          term: '2023-2024-1'
-        }
-      ]
-
-      // 如果选择了学期，过滤数据
-      if (selectedTerm.value) {
-        gradeList.value = gradeList.value.filter(item => item.term === selectedTerm.value)
-      }
+    }
+    const res = await getGradeList( selectedTerm.value )
+    if(res.code === 200){
+      gradeList.value = res.data;
     }
   } catch (error) {
     console.error('获取成绩失败:', error)
@@ -243,25 +180,29 @@ const handleExport = () => {
   }
 
   const exportData = gradeList.value.map(item => ({
-    '课程名称': item.courseName,
-    '课程代码': item.courseCode,
-    '授课教师': item.teacherName,
-    '学分': item.credits,
-    '课程类型': item.courseType,
-    '平时成绩': item.regularScore || '-',
+    '课程名称': item.className,
+    '课程代码': item.classNum,
+    '授课教师': item.teacher,
+    '学分': item.point,
+    '课程类型': item.type,
+    '平时成绩': item.regular || '-',
     '期末成绩': item.finalScore || '-',
-    '总成绩': item.totalScore || '-',
-    '绩点': item.gradePoint || '-',
-    '等级': item.grade || '-',
-    '学期': item.term
+    '总成绩': item.grade || '-',
   }))
 
   exportToExcel(exportData, '成绩单')
   ElMessage.success('导出成功')
 }
 
+const getTerms = async()=>{
+  const res = await getTermList()
+  terms.value = res.data
+}
+
 onMounted(() => {
   fetchGrades()
+  getTerms();
+  
 })
 </script>
 
@@ -353,6 +294,12 @@ onMounted(() => {
       font-weight: bold;
     }
   }
+}
+
+.select-list{
+  width: 160px;
+  margin-left: 10px;
+  margin-right: 10px;
 }
 </style>
 

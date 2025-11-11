@@ -7,7 +7,6 @@
           <template #header>
             <div class="card-header">
               <span>个人信息</span>
-              <el-button type="primary" @click="showEditDialog = true">编辑信息</el-button>
             </div>
           </template>
 
@@ -15,7 +14,7 @@
             <el-descriptions-item label="姓名">{{ userInfo.username || '-' }}</el-descriptions-item>
             <el-descriptions-item label="学号/工号">{{ userInfo.sduid || '-' }}</el-descriptions-item>
             <el-descriptions-item label="性别">
-              {{ userInfo.sex === '1' ? '男' : userInfo.sex === '0' ? '女' : '-' }}
+              {{ userInfo.sex }}
             </el-descriptions-item>
             <el-descriptions-item label="邮箱">{{ userInfo.email || '-' }}</el-descriptions-item>
             <el-descriptions-item label="手机">{{ userInfo.phone || '-' }}</el-descriptions-item>
@@ -61,61 +60,6 @@
         </el-card>
       </el-col>
     </el-row>
-
-    <!-- 编辑信息对话框 -->
-    <el-dialog v-model="showEditDialog" title="编辑个人信息" width="600px">
-      <el-form
-        ref="editFormRef"
-        :model="editForm"
-        :rules="editRules"
-        label-width="80px"
-      >
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="姓名" prop="username">
-              <el-input v-model="editForm.username" placeholder="请输入姓名" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="性别" prop="sex">
-              <el-select v-model="editForm.sex" placeholder="请选择性别">
-                <el-option label="男" value="1" />
-                <el-option label="女" value="0" />
-              </el-select>
-            </el-form-item>
-          </el-col>
-        </el-row>
-
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="民族" prop="ethnic">
-              <el-input v-model="editForm.ethnic" placeholder="请输入民族" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="籍贯" prop="nation">
-              <el-input v-model="editForm.nation" placeholder="请输入籍贯" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-
-        <el-form-item v-if="userStore.isStudent" label="政治面貌" prop="politicsStatus">
-          <el-select v-model="editForm.politicsStatus" placeholder="请选择政治面貌">
-            <el-option label="群众" value="群众" />
-            <el-option label="团员" value="团员" />
-            <el-option label="党员" value="党员" />
-            <el-option label="预备党员" value="预备党员" />
-          </el-select>
-        </el-form-item>
-      </el-form>
-
-      <template #footer>
-        <el-button @click="showEditDialog = false">取消</el-button>
-        <el-button type="primary" @click="handleUpdateInfo" :loading="updateLoading">
-          保存
-        </el-button>
-      </template>
-    </el-dialog>
 
     <!-- 修改密码对话框 -->
     <el-dialog v-model="showPasswordDialog" title="修改密码" width="400px">
@@ -222,28 +166,27 @@ import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { updatePhone, updateEmail, updatePassword } from '@/api/user'
-import { getVerifyCode } from '@/api/verify'
+import { getVerifyCode, verifyCode } from '@/api/verify'
 
 const userStore = useUserStore()
 
-const showEditDialog = ref(false)
 const showPasswordDialog = ref(false)
 const showEmailDialog = ref(false)
 const showPhoneDialog = ref(false)
 
-const updateLoading = ref(false)
 const passwordLoading = ref(false)
 const emailLoading = ref(false)
 const phoneLoading = ref(false)
 const sendingCode = ref(false)
 const codeCountdown = ref(0)
 
-const editFormRef = ref<FormInstance>()
 const passwordFormRef = ref<FormInstance>()
 const emailFormRef = ref<FormInstance>()
 const phoneFormRef = ref<FormInstance>()
 
 const userInfo = ref<any>({})
+
+let emailTicket : string|null = null;
 
 const editForm = reactive({
   username: '',
@@ -268,12 +211,6 @@ const phoneForm = reactive({
   phone: ''
 })
 
-// 表单验证规则
-const editRules: FormRules = {
-  username: [
-    { required: true, message: '请输入姓名', trigger: 'blur' }
-  ]
-}
 
 const passwordRules: FormRules = {
   oldPassword: [
@@ -286,7 +223,7 @@ const passwordRules: FormRules = {
   confirmPassword: [
     { required: true, message: '请确认新密码', trigger: 'blur' },
     {
-      validator: (rule, value, callback) => {
+      validator: (_rule, value, callback) => {
         if (value !== passwordForm.newPassword) {
           callback(new Error('两次输入的密码不一致'))
         } else {
@@ -318,9 +255,9 @@ const phoneRules: FormRules = {
 // 获取专业名称
 const getMajorName = (major: string) => {
   const majorMap: Record<string, string> = {
-    'MAJOR_0': '计算机科学与技术',
-    'MAJOR_1': '软件工程',
-    'MAJOR_2': '数据科学与大数据技术',
+    'MAJOR_0': '软件工程',
+    'MAJOR_1': '数字媒体技术',
+    'MAJOR_2': '大数据',
     'MAJOR_3': '人工智能'
   }
   return majorMap[major] || major
@@ -345,29 +282,6 @@ const fetchUserInfo = async () => {
   }
 }
 
-// 更新个人信息
-const handleUpdateInfo = async () => {
-  if (!editFormRef.value) return
-
-  await editFormRef.value.validate(async (valid) => {
-    if (valid) {
-      updateLoading.value = true
-      try {
-        // 这里应该调用更新用户信息的API
-        // 由于API限制，暂时只更新本地状态
-        Object.assign(userInfo.value, editForm)
-        userStore.updateUserInfo(editForm)
-
-        ElMessage.success('信息更新成功')
-        showEditDialog.value = false
-      } catch (error) {
-        ElMessage.error('更新失败')
-      } finally {
-        updateLoading.value = false
-      }
-    }
-  })
-}
 
 // 更新密码
 const handleUpdatePassword = async () => {
@@ -377,10 +291,10 @@ const handleUpdatePassword = async () => {
     if (valid) {
       passwordLoading.value = true
       try {
-        await updatePassword({
-          oldPassword: passwordForm.oldPassword,
-          newPassword: passwordForm.newPassword
-        })
+        await updatePassword(
+          passwordForm.oldPassword,
+          passwordForm.newPassword
+        )
 
         ElMessage.success('密码修改成功')
         showPasswordDialog.value = false
@@ -409,7 +323,7 @@ const sendEmailCode = async () => {
 
   sendingCode.value = true
   try {
-    await getVerifyCode(emailForm.email)
+    emailTicket = (await getVerifyCode(emailForm.email)).data
     ElMessage.success('验证码已发送')
 
     // 开始倒计时
@@ -435,10 +349,17 @@ const handleUpdateEmail = async () => {
     if (valid) {
       emailLoading.value = true
       try {
-        await updateEmail({
-          email: emailForm.email,
+        //验证码
+        const res = await verifyCode({
+          ticket: emailTicket as string,
           code: emailForm.code
         })
+        if( !(res.code==200) ){
+          ElMessage.error( res.msg || '验证码错误');
+          return;
+        }
+
+        await updateEmail(emailForm.email)
 
         ElMessage.success('邮箱修改成功')
         showEmailDialog.value = false
@@ -466,7 +387,7 @@ const handleUpdatePhone = async () => {
     if (valid) {
       phoneLoading.value = true
       try {
-        await updatePhone({ phone: phoneForm.phone })
+        await updatePhone( phoneForm.phone )
 
         ElMessage.success('手机号修改成功')
         showPhoneDialog.value = false

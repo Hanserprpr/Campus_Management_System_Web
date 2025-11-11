@@ -15,6 +15,22 @@ export interface GradeStats {
   averCredits: number
 }
 
+export interface Grade{
+  className: string;
+  classNum: number;
+  courseId: number;
+  finalScore: number;
+  grade: number;
+  id: number;
+  point: number;
+  rank: number;
+  regular: number;
+  teacher: string;
+  teacherId: number;
+  type: string;
+  [property: string]: any;
+}
+
 /**
  * 获取学生信息/成绩统计
  * @param term 学期
@@ -22,4 +38,8 @@ export interface GradeStats {
  */
 export function getGradeMessage(term?: string): Promise<ApiResponse<GradeStats>> {
   return request.get<GradeStats>('/grade/getMessage', { term })
+}
+
+export function getGradeList( term: string): Promise<ApiResponse<Grade[]>>{
+  return request.get<Grade[]>('/grade/getGrade', {term});
 }
