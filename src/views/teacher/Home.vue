@@ -1,13 +1,394 @@
 <template>
   <div class="page-container">
-    <el-card>
-      <h2>教师首页</h2>
-      <el-empty description="教师首页功能待实现" />
-    </el-card>
+    <div class="welcome-section">
+      <h2>欢迎，{{ userStore.username }}！</h2>
+      <p class="date">{{ currentDate }}</p>
+    </div>
+
+    <el-row :gutter="20" class="stats-row">
+      <el-col :span="8">
+        <el-card class="stat-card">
+          <div class="stat-content">
+            <el-icon class="stat-icon" color="#409eff">
+              <Reading />
+            </el-icon>
+            <div class="stat-info">
+              <div class="stat-value">{{ stats.totalClassHour }}</div>
+              <div class="stat-label">总课时</div>
+            </div>
+          </div>
+        </el-card>
+      </el-col>
+      <el-col :span="8">
+        <el-card class="stat-card">
+          <div class="stat-content">
+            <el-icon class="stat-icon" color="#67c23a">
+              <Document />
+            </el-icon>
+            <div class="stat-info">
+              <div class="stat-value">{{ stats.classAmo }}</div>
+              <div class="stat-label">课程数量</div>
+            </div>
+          </div>
+        </el-card>
+      </el-col>
+      <el-col :span="8">
+        <el-card class="stat-card">
+          <div class="stat-content">
+            <el-icon class="stat-icon" color="#e6a23c">
+              <Calendar />
+            </el-icon>
+            <div class="stat-info">
+              <div class="stat-value">{{ stats.todayCourses }}</div>
+              <div class="stat-label">今日课程</div>
+            </div>
+          </div>
+        </el-card>
+      </el-col>
+    </el-row>
+
+    <el-col class="content-col">
+      <el-col :span="24">
+        <el-card class="content-card">
+          <template #header>
+            <div class="card-header">
+              <span>今日课程</span>
+              <el-button style="margin-left: 18px;" @click="router.push('/teacher/schedule')"> 查看课表 </el-button>
+            </div>
+          </template>
+
+          <div v-if="todayCourses.length > 0" class="course-list">
+            <div
+              v-for="course in todayCourses"
+              :key="course.id"
+              class="course-item"
+            >
+              <div class="course-time">{{ course.timeSlot || course.time }}</div>
+              <div class="course-info">
+                <div class="course-name">{{ course.name }}</div>
+                <div class="course-detail">
+                  <span class="course-location">📍 {{ course.classroom }}</span>
+                  <span class="course-students" v-if="course.selectedCount">👥 {{ course.selectedCount }}人</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <el-empty v-else description="今天没有课程" />
+        </el-card>
+      </el-col>
+
+      <el-col :span="24">
+        <el-card class="content-card">
+          <template #header>
+            <div class="card-header">
+              <span>最新公告</span>
+            </div>
+          </template>
+
+          <div v-if="announcements.length > 0" class="announcement-list">
+            <div
+              v-for="announcement in announcements"
+              :key="announcement.id"
+              class="announcement-item"
+            >
+              <div class="announcement-title">{{ announcement.title }}</div>
+              <div class="announcement-time">{{ formatDate(announcement.createTime) }}</div>
+            </div>
+          </div>
+
+          <el-empty v-else description="暂无公告" />
+        </el-card>
+      </el-col>
+    </el-col>
   </div>
 </template>
 
 <script setup lang="ts">
-// 教师首页待实现
+import { ref, onMounted } from 'vue'
+import { Reading, Document, Calendar } from '@element-plus/icons-vue'
+import { useUserStore } from '@/stores/user'
+import { useAppStore } from '@/stores/app'
+import { formatDate, getCurrentDate, getDayOfWeekName, getDayOfWeek } from '@/utils/date'
+import { getTeacherMessage } from '@/api/teacher'
+import { getTeacherNoticeList } from '@/api/notice'
+import { getCourseSchedule } from '@/api/course'
+import type { Course, Announcement } from '@/types'
+import router from '@/router'
+
+const userStore = useUserStore()
+const appStore = useAppStore()
+
+const currentDate = ref(getCurrentDate() + ' ' + getDayOfWeekName())
+
+const stats = ref({
+  totalClassHour: 0,
+  classAmo: 0,
+  todayCourses: 0
+})
+
+const todayCourses = ref<Course[]>([])
+const announcements = ref<Announcement[]>([])
+
+// 课程时间段映射
+const timeSlots = [
+  { period: 1, time: '08:00-09:40' },
+  { period: 2, time: '10:00-11:40' },
+  { period: 3, time: '14:00-15:40' },
+  { period: 4, time: '16:00-17:40' },
+  { period: 5, time: '19:00-20:40' }
+]
+
+// 获取时间段显示文本
+const getTimeSlotText = (period: number): string => {
+  const slot = timeSlots.find(s => s.period === period)
+  return slot ? slot.time : `第${period}节`
+}
+
+// 获取教师统计信息
+const fetchStats = async () => {
+  try {
+    const response = await getTeacherMessage()
+    if (response.code === 200 && response.data) {
+      stats.value.totalClassHour = response.data.totalClassHour
+      stats.value.classAmo = response.data.classAmo
+    } else {
+      throw new Error('API返回错误')
+    }
+  } catch (error) {
+    console.warn('获取统计数据失败:', error)
+    stats.value.totalClassHour = 0
+    stats.value.classAmo = 0
+  }
+}
+
+// 获取今日课程
+const fetchTodayCourses = async () => {
+  try {
+    // 获取当前学期
+    const currentTerm = await appStore.fetchCurrentTerm()
+    if (!currentTerm) {
+      console.warn('无法获取当前学期')
+      todayCourses.value = []
+      return
+    }
+
+    // 获取当前周的课表（这里假设当前是第1周，实际应该获取当前教学周）
+    const currentWeek = 1 // TODO: 应该从API获取当前教学周
+    const response = await getCourseSchedule(currentWeek, { term: currentTerm })
+
+    if (response.code === 200 && response.data) {
+      const allCourses = Array.isArray(response.data) ? response.data : []
+
+      // 获取今天是星期几 (1-7, 1表示星期一)
+      const today = getDayOfWeek() // 0-6, 0表示星期日
+      const todayIndex = today === 0 ? 7 : today // 转换为1-7，7表示星期日
+
+      // 筛选今日课程
+      // time字段格式：(day-1)*5 + classOrder，其中day是1-7，classOrder是1-5
+      const todaysCourses = allCourses.filter(course => {
+        const time = Number.parseInt(course.time as string)
+        const day = Math.floor(time / 5) + 1
+        return day === todayIndex
+      })
+
+      // 处理课程数据，添加时间显示
+      todayCourses.value = todaysCourses.map(course => {
+        const time = Number.parseInt(course.time as string)
+        const classOrder = time % 5 || 5 // 如果余数为0，则是第5节课
+
+        return {
+          ...course,
+          timeSlot: getTimeSlotText(classOrder),
+          period: classOrder
+        }
+      }).sort((a, b) => a.period - b.period) // 按时间段排序
+
+      // 更新统计数据中的今日课程数量
+      stats.value.todayCourses = todayCourses.value.length
+    } else {
+      throw new Error('API返回错误')
+    }
+  } catch (error) {
+    console.error('获取今日课程失败:', error)
+    todayCourses.value = []
+    stats.value.todayCourses = 0
+  }
+}
+
+// 获取公告列表
+const fetchAnnouncements = async () => {
+  try {
+    const response = await getTeacherNoticeList()
+    if (response.code === 200 && response.data) {
+      // 只取前5条公告
+      announcements.value = Array.isArray(response.data)
+        ? response.data.slice(0, 5).map(notice => ({
+            id: notice.id,
+            title: notice.title,
+            content: notice.content,
+            createTime: notice.publishTime, // 使用 publishTime 映射到 createTime
+            updateTime: notice.publishTime, // 使用 publishTime 映射到 updateTime
+            publisher: notice.creatorName // 使用 creatorName 映射到 publisher
+          }))
+        : []
+    } else {
+      throw new Error('API返回错误')
+    }
+  } catch (error) {
+    console.warn('获取公告失败:', error)
+    announcements.value = []
+  }
+}
+
+onMounted(() => {
+  fetchStats()
+  fetchTodayCourses()
+  fetchAnnouncements()
+})
 </script>
+
+<style lang="scss" scoped>
+.welcome-section {
+  margin-bottom: 24px;
+  padding: 20px;
+  background: #fff;
+  border-radius: 8px;
+
+  h2 {
+    font-size: 24px;
+    color: #303133;
+    margin-bottom: 8px;
+  }
+
+  .date {
+    color: #909399;
+    font-size: 14px;
+  }
+}
+
+.stats-row {
+  margin-bottom: 20px;
+}
+
+.stat-card {
+  .stat-content {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+
+    .stat-icon {
+      font-size: 48px;
+    }
+
+    .stat-info {
+      flex: 1;
+
+      .stat-value {
+        font-size: 28px;
+        font-weight: bold;
+        color: #303133;
+        margin-bottom: 4px;
+      }
+
+      .stat-label {
+        font-size: 14px;
+        color: #909399;
+      }
+    }
+  }
+}
+
+.content-col {
+  width: 100%;
+  .content-card {
+    height: 400px;
+    margin-bottom: 16px;
+    :deep(.el-card__body) {
+      height: calc(100% - 56px);
+      overflow-y: auto;
+    }
+  }
+}
+
+.card-header {
+  font-size: 16px;
+  font-weight: bold;
+  color: #303133;
+}
+
+.course-list {
+  .course-item {
+    display: flex;
+    gap: 16px;
+    padding: 16px;
+    border-bottom: 1px solid #ebeef5;
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    .course-time {
+      flex-shrink: 0;
+      width: 80px;
+      font-size: 14px;
+      color: #409eff;
+      font-weight: bold;
+    }
+
+    .course-info {
+      flex: 1;
+
+      .course-name {
+        font-size: 16px;
+        color: #303133;
+        margin-bottom: 4px;
+      }
+
+      .course-detail {
+        font-size: 14px;
+        color: #909399;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+
+        .course-location,
+        .course-students {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+        }
+      }
+    }
+  }
+}
+
+.announcement-list {
+  .announcement-item {
+    padding: 16px;
+    border-bottom: 1px solid #ebeef5;
+    cursor: pointer;
+    transition: background 0.3s;
+
+    &:hover {
+      background: #f5f7fa;
+    }
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    .announcement-title {
+      font-size: 14px;
+      color: #303133;
+      margin-bottom: 8px;
+    }
+
+    .announcement-time {
+      font-size: 12px;
+      color: #909399;
+    }
+  }
+}
+</style>
 

@@ -5,7 +5,7 @@
         <div class="card-header">
           <el-row>
             <span>我的课表</span>
-            <el-select 
+            <el-select
               class="select-list"
               v-model="selectedTerm"
               :options="terms"
@@ -14,7 +14,7 @@
                 value : 'term',
                 label : 'term'
               }"></el-select>
-            <el-select 
+            <el-select
               class="select-list"
               v-model="selectedWeek"
               @change="getCourses"
@@ -27,7 +27,7 @@
           </el-row>
         </div>
       </template>
-      
+
       <div class="schedule-container">
         <el-row class="schedule-row day-info">
           <el-col :span="1" class="schedule-col">  </el-col>
@@ -39,14 +39,14 @@
           <el-col :span="3" class="schedule-col"> 周六 </el-col>
           <el-col :span="3" class="schedule-col"> 周日 </el-col>
         </el-row>
-        <el-row 
+        <el-row
           class="schedule-row"
           v-for="(order, i) in courseTableData"
         >
           <el-col :span="1">
              <el-card class="time-info">
                 {{ i+1 }}
-             </el-card> 
+             </el-card>
           </el-col>
           <el-col
             class="schedule-col"
@@ -61,7 +61,6 @@
                 <div class="course-place">
                   {{ day.classroom }}
                 </div>
-
               </div>
             </el-card>
           </el-col>
