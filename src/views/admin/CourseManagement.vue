@@ -240,7 +240,7 @@ const timeSlots = [
 ]
 
 // 获取状态标签类型
-const getStatusType = (status: string) => {
+const getStatusType = (status: string|undefined) => {
   switch (status) {
     case '待审批':
       return 'warning'

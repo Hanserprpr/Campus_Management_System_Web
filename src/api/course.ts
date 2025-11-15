@@ -11,11 +11,6 @@ export function getUnselectedCourses(params?: PageRequest) {
   return request.get<Course[]>('/course-selection/unChoose', params)
 }
 
-// 获取已选课程列表
-// !TODO没有这个接口
-export function getSelectedCourses(params?: PageRequest) {
-  return request.get<Course[]>('/course-selection/choose', params)
-}
 
 // 获取选课结果
 export function getCourseResults(params?: PageRequest) {
@@ -60,10 +55,6 @@ export function getCourseSchedule(week: number = 1, param:{term?:string}) {
   )
 }
 
-// 教师：获取我的课程列表
-export function getMyCourses() {
-  return request.get<Course[]>('/teacher/courses')
-}
 
 // 教师：申请新课程
 export function applyCourse(data: Partial<Course>) {

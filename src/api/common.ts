@@ -14,10 +14,6 @@ export function getCurrentTerm() {
   return request.get('/term/getCurrentTerm')
 }
 
-// 获取当前教学周 !TODO 没有这个接口
-export function getCurrentWeek(term: string) {
-  return request.get('/term/getCurrentWeek', { term })
-}
 
 // 获取教室列表（教师和管理员使用）
 export function getClassRoomList() {
