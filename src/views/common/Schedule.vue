@@ -3,34 +3,42 @@
     <el-card>
       <template #header>
         <div class="card-header">
-          <el-row>
+          <el-row align="middle">
             <span>我的课表</span>
-            <el-select 
+            <el-select
               class="select-list"
               v-model="selectedTerm"
-              :options="terms"
               @change="getCourses"
-              :props="{
-                value : 'term',
-                label : 'term'
-              }"></el-select>
-            <el-select 
+              placeholder="选择学期"
+            >
+              <el-option
+                v-for="item in terms"
+                :key="item.term"
+                :label="item.term"
+                :value="item.term"
+              />
+            </el-select>
+            <el-select
               class="select-list"
               v-model="selectedWeek"
               @change="getCourses"
-              :options="weeks"
-              :props="{
-                value : 'id',
-                label : 'label'
-              }"></el-select>
-            <el-button @click="getCourses">刷新</el-button>
+              placeholder="选择周次"
+            >
+              <el-option
+                v-for="item in weeks"
+                :key="item.id"
+                :label="item.label"
+                :value="item.id"
+              />
+            </el-select>
+            <el-button @click="getCourses" type="primary">刷新</el-button>
           </el-row>
         </div>
       </template>
-      
+
       <div class="schedule-container">
         <el-row class="schedule-row day-info">
-          <el-col :span="1" class="schedule-col">  </el-col>
+          <el-col :span="1" class="schedule-col time-header"> </el-col>
           <el-col :span="3" class="schedule-col"> 周一 </el-col>
           <el-col :span="3" class="schedule-col"> 周二 </el-col>
           <el-col :span="3" class="schedule-col"> 周三 </el-col>
@@ -39,163 +47,267 @@
           <el-col :span="3" class="schedule-col"> 周六 </el-col>
           <el-col :span="3" class="schedule-col"> 周日 </el-col>
         </el-row>
-        <el-row 
-          class="schedule-row"
-          v-for="(order, i) in courseTableData"
-        >
-          <el-col :span="1">
-             <el-card class="time-info">
-                {{ i+1 }}
-             </el-card> 
+        <el-row class="schedule-row" v-for="(order, i) in courseTableData" :key="i">
+          <el-col :span="1" class="schedule-col">
+            <div class="time-info">
+              <div class="time-slot">{{ i + 1 }}</div>
+            </div>
           </el-col>
-          <el-col
-            class="schedule-col"
-            :span="3"
-            v-for="(day) in order"
-          >
-            <el-card class = "course-card">
-              <div class = "course-div" v-if="day!=null">
-                <div class = "course-name">
-                  {{ day.name }}
-                </div>
-                <div class="course-place">
-                  {{ day.classroom }}
-                </div>
-
-              </div>
-            </el-card>
+          <el-col class="schedule-col" :span="3" v-for="(day, j) in order" :key="j">
+            <div
+              class="course-card"
+              v-if="day"
+              :style="{ backgroundColor: getCourseColor(day.name) }"
+              @click="showCourseDetail(day)"
+            >
+              <div class="course-name">{{ day.name }}</div>
+              <div class="course-place">@{{ day.classroom }}</div>
+            </div>
+            <div class="course-card empty" v-else></div>
           </el-col>
         </el-row>
       </div>
     </el-card>
+
+    <!-- 课程详情弹窗 -->
+    <el-dialog v-model="dialogVisible" title="课程详情" width="500px">
+      <el-descriptions :column="2" border>
+        <el-descriptions-item label="课程名称">{{ selectedCourse?.name }}</el-descriptions-item>
+        <el-descriptions-item label="授课教师">{{
+          selectedCourse?.teacherName
+        }}</el-descriptions-item>
+        <el-descriptions-item label="上课地点">{{
+          selectedCourse?.classroom
+        }}</el-descriptions-item>
+        <el-descriptions-item label="学分">{{ selectedCourse?.point }}</el-descriptions-item>
+        <el-descriptions-item label="周次"
+          >{{ selectedCourse?.weekStart }} - {{ selectedCourse?.weekEnd }}</el-descriptions-item
+        >
+        <el-descriptions-item label="课程类型">{{ selectedCourse?.type }}</el-descriptions-item>
+        <el-descriptions-item label="开课学院">{{ selectedCourse?.college }}</el-descriptions-item>
+        <el-descriptions-item label="已选/容量"
+          >{{ selectedCourse?.selectedCount }} / {{ selectedCourse?.capacity }}</el-descriptions-item
+        >
+        <el-descriptions-item label="课程简介" :span="2">{{
+          selectedCourse?.intro || '暂无'
+        }}</el-descriptions-item>
+      </el-descriptions>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="dialogVisible = false">关闭</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { getTermList } from '@/api/common';
-import { getCourseSchedule } from '@/api/course';
-import { useAppStore } from '@/stores/app';
-import { Course, Term } from '@/types';
+import { getTermList } from '@/api/common'
+import { getCourseSchedule } from '@/api/course'
+import { useAppStore } from '@/stores/app'
+import type { Course, Term } from '@/types'
+import { ref, onMounted, reactive } from 'vue'
 
 //  time = (day-1)*5 + classOrder
-const appStore = useAppStore();
+const appStore = useAppStore()
 
-let courses: Course[] = [];
+let courses: Course[] = []
 
 //初始化数组，确定大小5*7
-const courseTableData = reactive<(Course|null)[][]>(
-  Array.from( 
-    {length:5}, 
-    ()=>Array.from( {length:7}, 
-      ()=>null
-    )
-  ) as (Course|null)[][] 
+const courseTableData = reactive<(Course | null)[][]>(
+  Array.from({ length: 5 }, () => Array.from({ length: 7 }, () => null)) as (Course | null)[][]
 )
 const terms = ref<Term[]>()
-const weeks : {
-  id: number,
+const weeks: {
+  id: number
   label: string
-}[] = [];
-for( let i:number = 1; i <= 20; ++i) weeks.push( { id: i, label: `第${i}周`})
+}[] = []
+for (let i: number = 1; i <= 20; ++i) weeks.push({ id: i, label: `第${i}周` })
 
 const selectedTerm = ref<string>('')
 const selectedWeek = ref<number>(1)
 
-const getCourses = async ()=>{
-  const res = await getCourseSchedule(selectedWeek.value, { term: selectedTerm.value });
-  courses = res.data;
-  makeCoursesTableData();
+const dialogVisible = ref(false)
+const selectedCourse = ref<Course | null>(null)
+
+const showCourseDetail = (course: Course) => {
+  selectedCourse.value = course
+  dialogVisible.value = true
 }
-const getTerms = async()=>{
+
+// 课程颜色
+const courseColors = [
+  '#FFDAB9',
+  '#E6E6FA',
+  '#B0E0E6',
+  '#98FB98',
+  '#F0E68C',
+  '#DDA0DD',
+  '#ADD8E6',
+  '#F08080',
+  '#20B2AA',
+  '#87CEFA'
+]
+const courseColorMap = new Map<string, string>()
+let colorIndex = 0
+
+const getCourseColor = (courseName: string) => {
+  if (!courseColorMap.has(courseName)) {
+    courseColorMap.set(courseName, courseColors[colorIndex % courseColors.length])
+    colorIndex++
+  }
+  return courseColorMap.get(courseName)
+}
+
+const getCourses = async () => {
+  const res = await getCourseSchedule(selectedWeek.value, { term: selectedTerm.value })
+  courses = res.data
+  makeCoursesTableData()
+}
+const getTerms = async () => {
   const res = await getTermList()
   terms.value = res.data
 }
-const makeCoursesTableData = ()=>{
-  for(let i = 0; i < 5; ++i){
-    for(let j = 0; j < 7; ++j){
+const makeCoursesTableData = () => {
+  // 重置课表和颜色映射
+  for (let i = 0; i < 5; ++i) {
+    for (let j = 0; j < 7; ++j) {
       courseTableData[i][j] = null
     }
   }
-  courses.forEach( (value: Course)=>{
-    const time = Number.parseInt(value.time as string);
-    const classOrder: number = time % 5;
-    const day: number = Math.floor(time / 5) + 1;
-    if( classOrder > 0){
-      courseTableData[classOrder-1][day-1] = value;
-    }else if( classOrder === 0){
-      courseTableData[4][day-1] = value;
+  courseColorMap.clear()
+  colorIndex = 0
+
+  courses.forEach((value: Course) => {
+    const time = Number.parseInt(value.time as string)
+    const classOrder: number = time % 5
+    const day: number = Math.floor(time / 5) + 1
+    if (classOrder > 0) {
+      courseTableData[classOrder - 1][day - 1] = value
+    } else if (classOrder === 0) {
+      courseTableData[4][day - 2] = value // 后端周日day=7, time=30, day-1=6, time%5=0, order=4
     }
   })
 }
-onMounted( async ()=>{
-  selectedTerm.value = await appStore.fetchCurrentTerm();
-  getTerms();
-  getCourses();
+onMounted(async () => {
+  selectedTerm.value = await appStore.fetchCurrentTerm()
+  getTerms()
+  getCourses()
 })
 </script>
 
 <style lang="scss" scoped>
-
-.page-container{
+.page-container {
   height: 100%;
+  padding: 16px;
+  background-color: #f5f7fa;
 }
 
 .card-header {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: bold;
+  color: #303133;
 }
 
 .schedule-container {
   width: 100%;
-  margin-top: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px; // 行与行之间的间距
-  max-height: calc(100% - 100px); // 限制最大高度，避免溢出
-  overflow-y: auto; 
-  overflow-x: auto; 
-  white-space: nowrap; 
+  margin-top: 10px;
+  border: 1px solid #ebeef5;
+  border-radius: 4px;
+  overflow: hidden;
 }
 
 .schedule-row {
-  width: 100%;
   display: flex;
-  gap: 6px; // 列与列之间的间距
+  &:not(:last-child) {
+    border-bottom: 1px solid #ebeef5;
+  }
 }
 
 .schedule-col {
-  flex: 1; 
-}
-
-.select-list{
-  width: 160px;
-  margin-left: 10px;
-  margin-right: 10px;
-}
-
-.course-card{
-  min-height: 100px;
-}
-.course-div{
+  flex: 1;
   text-align: center;
-  border-radius: 6px;
-  border: 5px;
-  border-width: 2px;
-  border-color: rgba(247, 53, 147);
-  background-color: rgba(247, 53, 147, 0.162);
-}
-.course-name{
-  font-weight: bold;
-}
-.time-info{
-  min-height: 100px;
+  display: flex;
   align-items: center;
-  align-self: center;
-  align-content: center;
-  text-align: center;
+  justify-content: center;
+  &:not(:last-child) {
+    border-right: 1px solid #ebeef5;
+  }
 }
-.day-info{
-  text-align:center;
+
+.day-info .schedule-col {
+  height: 40px;
+  font-weight: bold;
+  background-color: #fafafa;
+}
+
+.time-header {
+  background-color: #fafafa;
+}
+
+.select-list {
+  width: 160px;
+  margin-left: 20px;
+}
+
+.course-card {
+  width: 100%;
+  min-height: 100px;
+  padding: 8px;
+  margin: 3px 5px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  word-break: break-all;
+  border-radius: 8px;
+
+  &:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    z-index: 10;
+  }
+
+  &.empty {
+    cursor: default;
+    &:hover {
+      transform: none;
+      box-shadow: none;
+    }
+  }
+}
+
+.course-name {
+  font-weight: bold;
+  font-size: 14px;
+  color: #303133;
+}
+
+.course-place {
+  font-size: 12px;
+  color: #606266;
+  margin-top: 4px;
+}
+
+.time-info {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background-color: #fafafa;
+  font-size: 12px;
+  color: #909399;
+}
+
+.time-slot {
+  font-weight: bold;
+  font-size: 16px;
+  color: #303133;
 }
 </style>
 

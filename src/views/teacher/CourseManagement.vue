@@ -703,6 +703,7 @@ const resetForm = () => {
 }
 
 onMounted(async () => {
+  loading.value = true
   await fetchCurrentTerm()
   await fetchTermList()
   await fetchClassroomList()
