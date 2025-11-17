@@ -110,9 +110,18 @@
               v-for="notice in notices"
               :key="notice.id"
               class="notice-item"
+              @click="showNoticeDetail(notice)"
             >
-              <div class="notice-title">{{ notice.title }}</div>
-              <div class="notice-time">{{ formatDate(notice.publishTime) }}</div>
+              <div class="notice-header">
+                <div class="notice-title">
+                  <el-tag v-if="notice.isTop === 1" type="danger" size="small" style="margin-right: 8px;">置顶</el-tag>
+                  {{ notice.title }}
+                </div>
+              </div>
+              <div class="notice-footer">
+                <span class="notice-publisher">发布者: {{ notice.creatorName }}</span>
+                <span class="notice-time">{{ formatDate(notice.publishTime) }}</span>
+              </div>
             </div>
           </div>
 
@@ -120,6 +129,29 @@
         </el-card>
       </el-col>
     </el-row>
+
+    <!-- 公告详情对话框 -->
+    <el-dialog v-model="showNoticeDetailDialog" title="公告详情" width="600px">
+      <div v-if="currentNotice" class="notice-detail">
+        <div class="detail-header">
+          <h3 class="detail-title">
+            <el-tag v-if="currentNotice.isTop === 1" type="danger" size="small" style="margin-right: 8px;">置顶</el-tag>
+            {{ currentNotice.title }}
+          </h3>
+          <div class="detail-meta">
+            <span>发布者: {{ currentNotice.creatorName }}</span>
+            <span>发布时间: {{ formatDate(currentNotice.publishTime) }}</span>
+          </div>
+        </div>
+        <el-divider />
+        <div class="detail-content">
+          {{ currentNotice.content }}
+        </div>
+      </div>
+      <template #footer>
+        <el-button @click="showNoticeDetailDialog = false">关闭</el-button>
+      </template>
+    </el-dialog>
 
     <!-- 发布公告对话框 -->
     <el-dialog v-model="showNoticeDialog" title="发布公告" width="600px">
@@ -231,6 +263,8 @@ const stats = ref({
 const pendingCourses = ref<any[]>([])
 const notices = ref<any[]>([])
 const showNoticeDialog = ref(false)
+const showNoticeDetailDialog = ref(false)
+const currentNotice = ref<any>(null)
 const publishLoading = ref(false)
 const showApprovalDialog = ref(false)
 const approvalLoading = ref(false)
@@ -288,8 +322,10 @@ const fetchPendingCourses = async () => {
 const fetchNotices = async () => {
   try {
     const response = await getAdminNoticeList(1)
-    if (response.code === 200) {
-      notices.value = response.data.slice(0, 5) // 只显示前5个
+    if (response.code === 200 && response.data) {
+      // 置顶的排在前面
+      const sortedData = [...response.data].sort((a, b) => (b.isTop || 0) - (a.isTop || 0))
+      notices.value = sortedData.slice(0, 5) // 只显示前5个
     }
   } catch (error) {
     console.error('获取公告列表失败:', error)
@@ -404,6 +440,12 @@ const publishNotice = async () => {
   } finally {
     publishLoading.value = false
   }
+}
+
+// 显示公告详情
+const showNoticeDetail = (notice: any) => {
+  currentNotice.value = notice
+  showNoticeDetailDialog.value = true
 }
 
 onMounted(() => {
@@ -533,16 +575,59 @@ onMounted(() => {
       border-bottom: none;
     }
 
-    .notice-title {
-      font-size: 14px;
-      color: #303133;
+    .notice-header {
       margin-bottom: 8px;
+
+      .notice-title {
+        font-size: 14px;
+        color: #303133;
+        display: flex;
+        align-items: center;
+      }
     }
 
-    .notice-time {
-      font-size: 12px;
+    .notice-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+
+      .notice-publisher {
+        font-size: 12px;
+        color: #606266;
+      }
+
+      .notice-time {
+        font-size: 12px;
+        color: #909399;
+      }
+    }
+  }
+}
+
+.notice-detail {
+  .detail-header {
+    .detail-title {
+      font-size: 20px;
+      color: #303133;
+      margin: 0 0 16px 0;
+      display: flex;
+      align-items: center;
+    }
+
+    .detail-meta {
+      display: flex;
+      gap: 24px;
+      font-size: 14px;
       color: #909399;
     }
+  }
+
+  .detail-content {
+    font-size: 14px;
+    color: #606266;
+    line-height: 1.8;
+    white-space: pre-wrap;
+    word-break: break-word;
   }
 }
 </style>

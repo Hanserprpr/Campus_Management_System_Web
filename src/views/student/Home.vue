@@ -48,17 +48,49 @@
               v-for="announcement in announcements"
               :key="announcement.id"
               class="announcement-item"
+              @click="showAnnouncementDetail(announcement)"
             >
-              <div class="announcement-title">{{ announcement.title }}</div>
-              <div class="announcement-time">{{ formatDate(announcement.createTime) }}</div>
+              <div class="announcement-header">
+                <div class="announcement-title">
+                  <el-tag v-if="announcement.isTop === 1" type="danger" size="small" style="margin-right: 8px;">置顶</el-tag>
+                  {{ announcement.title }}
+                </div>
+              </div>
+              <div class="announcement-footer">
+                <span class="announcement-publisher">发布者: {{ announcement.publisher }}</span>
+                <span class="announcement-time">{{ formatDate(announcement.createTime) }}</span>
+              </div>
             </div>
           </div>
-          
+
           <el-empty v-else description="暂无公告" />
         </el-card>
       </el-col>
     </el-col>
   </div>
+
+  <!-- 公告详情对话框 -->
+  <el-dialog v-model="showAnnouncementDialog" title="公告详情" width="600px">
+    <div v-if="currentAnnouncement" class="announcement-detail">
+      <div class="detail-header">
+        <h3 class="detail-title">
+          <el-tag v-if="currentAnnouncement.isTop === 1" type="danger" size="small" style="margin-right: 8px;">置顶</el-tag>
+          {{ currentAnnouncement.title }}
+        </h3>
+        <div class="detail-meta">
+          <span>发布者: {{ currentAnnouncement.publisher }}</span>
+          <span>发布时间: {{ formatDate(currentAnnouncement.createTime) }}</span>
+        </div>
+      </div>
+      <el-divider />
+      <div class="detail-content">
+        {{ currentAnnouncement.content }}
+      </div>
+    </div>
+    <template #footer>
+      <el-button @click="showAnnouncementDialog = false">关闭</el-button>
+    </template>
+  </el-dialog>
 </template>
 
 <script setup lang="ts">
@@ -85,6 +117,8 @@ const stats = ref({
 
 const todayCourses = ref<Course[]>([])
 const announcements = ref<Announcement[]>([])
+const showAnnouncementDialog = ref(false)
+const currentAnnouncement = ref<Announcement | null>(null)
 
 // const fetchStats = async () => {
 //   try {
@@ -123,17 +157,20 @@ const fetchAnnouncements = async () => {
   try {
     const response = await getStudentNoticeList()
     if (response.code === 200 && response.data) {
-      // 只取前5条公告
-      announcements.value = Array.isArray(response.data)
-        ? response.data.slice(0, 5).map(notice => ({
-            id: notice.id,
-            title: notice.title,
-            content: notice.content,
-            createTime: notice.createdAt, // 使用 createdAt 映射到 createTime
-            updateTime: notice.updatedAt, // 使用 updatedAt 映射到 updateTime
-            publisher: notice.creatorName // 使用 creatorName 映射到 publisher
-          }))
+      // 只取前5条公告，置顶的排在前面
+      const sortedData = Array.isArray(response.data)
+        ? [...response.data].sort((a, b) => (b.isTop || 0) - (a.isTop || 0))
         : []
+
+      announcements.value = sortedData.slice(0, 5).map(notice => ({
+        id: notice.id,
+        title: notice.title,
+        content: notice.content,
+        createTime: notice.createdAt, // 使用 createdAt 映射到 createTime
+        updateTime: notice.updatedAt, // 使用 updatedAt 映射到 updateTime
+        publisher: notice.creatorName, // 使用 creatorName 映射到 publisher
+        isTop: notice.isTop // 添加置顶标识
+      }))
     } else {
       throw new Error('API返回错误')
     }
@@ -141,6 +178,12 @@ const fetchAnnouncements = async () => {
     console.warn('获取公告失败:', error)
     announcements.value = []
   }
+}
+
+// 显示公告详情
+const showAnnouncementDetail = (announcement: Announcement) => {
+  currentAnnouncement.value = announcement
+  showAnnouncementDialog.value = true
 }
 
 onMounted(() => {
@@ -261,25 +304,68 @@ onMounted(() => {
     border-bottom: 1px solid #ebeef5;
     cursor: pointer;
     transition: background 0.3s;
-    
+
     &:hover {
       background: #f5f7fa;
     }
-    
+
     &:last-child {
       border-bottom: none;
     }
-    
-    .announcement-title {
-      font-size: 14px;
-      color: #303133;
+
+    .announcement-header {
       margin-bottom: 8px;
+
+      .announcement-title {
+        font-size: 14px;
+        color: #303133;
+        display: flex;
+        align-items: center;
+      }
     }
-    
-    .announcement-time {
-      font-size: 12px;
+
+    .announcement-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+
+      .announcement-publisher {
+        font-size: 12px;
+        color: #606266;
+      }
+
+      .announcement-time {
+        font-size: 12px;
+        color: #909399;
+      }
+    }
+  }
+}
+
+.announcement-detail {
+  .detail-header {
+    .detail-title {
+      font-size: 20px;
+      color: #303133;
+      margin: 0 0 16px 0;
+      display: flex;
+      align-items: center;
+    }
+
+    .detail-meta {
+      display: flex;
+      gap: 24px;
+      font-size: 14px;
       color: #909399;
     }
+  }
+
+  .detail-content {
+    font-size: 14px;
+    color: #606266;
+    line-height: 1.8;
+    white-space: pre-wrap;
+    word-break: break-word;
   }
 }
 </style>
