@@ -6191,7 +6191,7 @@
           },
           "category": {
             "type": "string",
-            "description": "课程类别"
+            "description": "课程小类"
           },
           "point": {
             "type": "number",

@@ -54,7 +54,7 @@
         <el-table-column type="selection" width="55" />
         <el-table-column prop="name" label="课程名称" min-width="150" />
         <el-table-column prop="teacherName" label="授课教师" width="120" />
-        <el-table-column prop="category" label="课程类别" width="100" />
+        <el-table-column prop="category" label="课程小类" width="100" />
         <el-table-column prop="type" label="课程类型" width="100" />
         <el-table-column prop="point" label="学分" width="80" />
         <el-table-column prop="capacity" label="容量" width="80" />
@@ -113,7 +113,7 @@
         <el-descriptions-item label="课序号">{{ currentCourse.classNum }}</el-descriptions-item>
         <el-descriptions-item label="课程名称">{{ currentCourse.name }}</el-descriptions-item>
         <el-descriptions-item label="授课教师">{{ currentCourse.teacherName }}</el-descriptions-item>
-        <el-descriptions-item label="课程类别">{{ currentCourse.category || '未设置' }}</el-descriptions-item>
+        <el-descriptions-item label="课程小类">{{ currentCourse.category || '未设置' }}</el-descriptions-item>
         <el-descriptions-item label="课程类型">{{ currentCourse.type }}</el-descriptions-item>
         <el-descriptions-item label="学分">{{ currentCourse.point }}</el-descriptions-item>
         <el-descriptions-item label="容量">{{ currentCourse.capacity }}</el-descriptions-item>
@@ -299,7 +299,6 @@ const fetchCourseList = async () => {
       const searchParams: any = {}
       if (searchForm.keyword) searchParams.keyword = searchForm.keyword
       if (searchForm.term) searchParams.term = searchForm.term
-      // 注意：搜索API可能不支持状态筛选，所以先不传type参数
 
       response = await searchCourses(searchParams)
 
@@ -501,14 +500,22 @@ const handleAutoSchedule = async () => {
       return
     }
 
+    let termName = ''
+    if (typeof currentTermResponse.data === 'string') {
+      termName = currentTermResponse.data
+    } else {
+      ElMessage.error('无法获取当前学期名称')
+      return
+    }
+
     await ElMessageBox.confirm(
-      `确认对当前学期 ${currentTermResponse.data.name} 进行自动排课？`,
+      `确认对当前学期 ${termName} 进行自动排课？`,
       '确认排课',
       { type: 'warning' }
     )
 
     loading.value = true
-    await autoSchedule(currentTermResponse.data.name)
+    await autoSchedule(termName)
     ElMessage.success('自动排课成功')
     fetchCourseList()
   } catch (error) {

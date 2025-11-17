@@ -327,13 +327,22 @@ const fetchSectionList = async () => {
     if (response.code === 200 && response.data) {
       let rawData: any[] = []
 
-      // 统一处理响应格式（搜索和全部列表使用相同的格式）
+      // 处理响应格式
       if (Array.isArray(response.data)) {
         // 如果直接返回数组
         rawData = response.data
         pagination.total = response.data.length
+      } else if (response.data.section) {
+        // 如果返回对象包含 section 字段
+        rawData = response.data.section
+        // 如果有 page 字段，表示总页数，需要转换为总记录数
+        if (response.data.page) {
+          pagination.total = response.data.page * pagination.size
+        } else {
+          pagination.total = response.data.section.length
+        }
       } else if (response.data.list) {
-        // 如果返回对象包含 list 字段（统一格式）
+        // 如果返回对象包含 list 字段
         rawData = response.data.list
         pagination.total = response.data.total || response.data.list.length
       } else {

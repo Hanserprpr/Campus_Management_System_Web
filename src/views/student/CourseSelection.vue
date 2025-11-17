@@ -11,10 +11,10 @@
           />
         </el-form-item>
         
-        <el-form-item label="课程类别">
+        <el-form-item label="课程小类">
           <el-select
             v-model="searchForm.category"
-            placeholder="请选择课程类别"
+            placeholder="请选择课程小类"
             clearable
             @change="handleSearch"
           >
@@ -42,7 +42,7 @@
           >
             <el-table-column prop="name" label="课程名称" min-width="150" />
             <el-table-column prop="teacherName" label="授课教师" width="120" />
-            <el-table-column prop="category" label="课程类别" width="100" />
+            <el-table-column prop="category" label="课程小类" width="100" />
             <el-table-column prop="point" label="学分" width="80" />
             <el-table-column prop="classroom" label="教室" width="120" />
             <el-table-column label="上课时间" width="200">
@@ -91,7 +91,7 @@
           >
             <el-table-column prop="name" label="课程名称" min-width="150" />
             <el-table-column prop="teacherName" label="授课教师" width="120" />
-            <el-table-column prop="category" label="课程类别" width="100" />
+            <el-table-column prop="category" label="课程小类" width="100" />
             <el-table-column prop="point" label="学分" width="80" />
             <el-table-column prop="classroom" label="教室" width="120" />
             <el-table-column label="上课时间" width="200">
@@ -165,7 +165,6 @@ const formatCourseTime = (course: Course) => {
 const loadUnselectedCourses = async () => {
   loading.value = true
   try {
-    // 如果有搜索条件，使用搜索API，否则使用获取未选课程API
     const response = searchForm.keyword || searchForm.category
       ? await searchCourses({
           keyword: searchForm.keyword,
