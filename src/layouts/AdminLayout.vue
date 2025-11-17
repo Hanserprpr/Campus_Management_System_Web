@@ -49,6 +49,11 @@
               <el-icon><OfficeBuilding /></el-icon>
               <span>班级管理</span>
             </el-menu-item>
+
+            <el-menu-item index="/admin/term-management">
+              <el-icon><Calendar /></el-icon>
+              <span>学期管理</span>
+            </el-menu-item>
           </el-menu>
         </el-aside>
         
@@ -74,7 +79,8 @@ import {
   UserFilled,
   Avatar,
   Notebook,
-  OfficeBuilding
+  OfficeBuilding,
+  Calendar
 } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 

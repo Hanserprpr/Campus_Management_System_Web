@@ -128,6 +128,12 @@ const routes: RouteRecordRaw[] = [
         name: 'ClassManagement',
         component: () => import('@/views/admin/ClassManagement.vue'),
         meta: { title: '班级管理' }
+      },
+      {
+        path: 'term-management',
+        name: 'TermManagement',
+        component: () => import('@/views/admin/TermManagement.vue'),
+        meta: { title: '学期管理' }
       }
     ]
   },
