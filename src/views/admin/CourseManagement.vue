@@ -107,24 +107,42 @@
     </el-card>
 
     <!-- 课程详情对话框 -->
-    <el-dialog v-model="showDetailDialog" title="课程详情" width="600px">
+    <el-dialog v-model="showDetailDialog" title="课程详情" width="700px">
       <el-descriptions :column="2" border>
+        <el-descriptions-item label="课程ID">{{ currentCourse.id }}</el-descriptions-item>
+        <el-descriptions-item label="课序号">{{ currentCourse.classNum }}</el-descriptions-item>
         <el-descriptions-item label="课程名称">{{ currentCourse.name }}</el-descriptions-item>
         <el-descriptions-item label="授课教师">{{ currentCourse.teacherName }}</el-descriptions-item>
-        <el-descriptions-item label="课程类别">{{ currentCourse.category }}</el-descriptions-item>
+        <el-descriptions-item label="课程类别">{{ currentCourse.category || '未设置' }}</el-descriptions-item>
         <el-descriptions-item label="课程类型">{{ currentCourse.type }}</el-descriptions-item>
         <el-descriptions-item label="学分">{{ currentCourse.point }}</el-descriptions-item>
         <el-descriptions-item label="容量">{{ currentCourse.capacity }}</el-descriptions-item>
         <el-descriptions-item label="教室">{{ currentCourse.classroom }}</el-descriptions-item>
+        <el-descriptions-item label="上课时间">{{ currentCourse.time }}</el-descriptions-item>
         <el-descriptions-item label="学院">{{ currentCourse.college }}</el-descriptions-item>
         <el-descriptions-item label="学期">{{ currentCourse.term }}</el-descriptions-item>
+        <el-descriptions-item label="开始周次">{{ currentCourse.weekStart }}</el-descriptions-item>
+        <el-descriptions-item label="结束周次">{{ currentCourse.weekEnd }}</el-descriptions-item>
+        <el-descriptions-item label="周期">{{ currentCourse.period }} 周</el-descriptions-item>
+        <el-descriptions-item label="考核方式">
+          {{ currentCourse.examination === 1 ? '考试' : '考查' }}
+        </el-descriptions-item>
+        <el-descriptions-item label="平时成绩占比">
+          {{ currentCourse.regularRatio ? (currentCourse.regularRatio * 100).toFixed(0) + '%' : '0%' }}
+        </el-descriptions-item>
+        <el-descriptions-item label="期末成绩占比">
+          {{ currentCourse.finalRatio ? (currentCourse.finalRatio * 100).toFixed(0) + '%' : '0%' }}
+        </el-descriptions-item>
+        <el-descriptions-item label="成绩是否公开">
+          <el-tag :type="currentCourse.published ? 'success' : 'info'" size="small">
+            {{ currentCourse.published ? '已公开' : '未公开' }}
+          </el-tag>
+        </el-descriptions-item>
         <el-descriptions-item label="状态">
           <el-tag :type="getStatusType(currentCourse.status)" size="small">
             {{ currentCourse.status }}
           </el-tag>
         </el-descriptions-item>
-        <el-descriptions-item label="开始周次">{{ currentCourse.weekStart }}</el-descriptions-item>
-        <el-descriptions-item label="结束周次">{{ currentCourse.weekEnd }}</el-descriptions-item>
         <el-descriptions-item label="课程介绍" :span="2">
           {{ currentCourse.intro || '暂无介绍' }}
         </el-descriptions-item>
@@ -181,7 +199,8 @@ import {
   approveCourse as approveCourseApi,
   deleteApprovedCourse,
   searchCourses,
-  getAllCourses
+  getAllCourses,
+  getCourseDetail
 } from '@/api/course'
 import { getTermList, getCurrentTerm } from '@/api/common'
 import { autoSchedule } from '@/api/course'
@@ -384,9 +403,23 @@ const handleCurrentChange = (page: number) => {
 }
 
 // 查看课程详情
-const viewCourse = (course: Course) => {
-  currentCourse.value = course
-  showDetailDialog.value = true
+const viewCourse = async (course: Course) => {
+  try {
+    loading.value = true
+    const response = await getCourseDetail(course.id)
+
+    if (response.code === 200 && response.data) {
+      currentCourse.value = response.data
+      showDetailDialog.value = true
+    } else {
+      ElMessage.error('获取课程详情失败')
+    }
+  } catch (error) {
+    console.error('获取课程详情失败:', error)
+    ElMessage.error('获取课程详情失败')
+  } finally {
+    loading.value = false
+  }
 }
 
 // 审核课程

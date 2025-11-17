@@ -75,10 +75,13 @@
           v-model:page-size="pagination.size"
           :page-sizes="[10, 20, 50, 100]"
           :total="pagination.total"
-          layout="total, sizes, prev, pager, next, jumper"
+          :page-count="pagination.pageCount"
+          layout="sizes, prev, pager, next, jumper, ->, slot"
           @size-change="handleSizeChange"
           @current-change="handleCurrentChange"
-        />
+        >
+          <span class="pagination-info"> 共 {{ pagination.pageCount }} 页</span>
+        </el-pagination>
       </div>
     </el-card>
 
@@ -233,7 +236,8 @@ const searchForm = reactive({
 const pagination = reactive({
   page: 1,
   size: 20,
-  total: 0
+  total: 0,
+  pageCount: 0
 })
 
 const teacherList = ref<UserInfo[]>([])
@@ -311,25 +315,32 @@ const fetchTeacherList = async () => {
       if (Array.isArray(response.data)) {
         teacherList.value = response.data
         pagination.total = response.data.length
+        pagination.pageCount = Math.ceil(response.data.length / pagination.size)
       } else if (response.data.user) {
         teacherList.value = response.data.user.map((teacher: any) => ({
           ...teacher,
           permission: 1 // 教师权限
         }))
-        pagination.total = response.data.user.length
+        // 后端返回的 page 是总页数
+        pagination.pageCount = response.data.page
+        // 总记录数 = 总页数 × 每页大小
+        pagination.total = response.data.page * pagination.size
       } else if (response.data.list) {
         teacherList.value = response.data.list.map((teacher: any) => ({
           ...teacher,
           permission: 1 // 教师权限
         }))
         pagination.total = response.data.total || response.data.list.length
+        pagination.pageCount = Math.ceil(pagination.total / pagination.size)
       } else {
         teacherList.value = []
         pagination.total = 0
+        pagination.pageCount = 0
       }
     } else {
       teacherList.value = []
       pagination.total = 0
+      pagination.pageCount = 0
     }
   } catch (error) {
     console.error('获取教师列表失败:', error)
@@ -507,6 +518,13 @@ onMounted(() => {
   margin-top: 20px;
   display: flex;
   justify-content: center;
+
+  .pagination-info {
+    font-size: 14px;
+    color: #606266;
+    line-height: 32px;
+    margin-left: 16px;
+  }
 }
 
 :deep(.el-table) {

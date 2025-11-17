@@ -30,10 +30,10 @@
           </el-form-item>
           <el-form-item label="专业">
             <el-select v-model="searchForm.major" placeholder="请选择专业" clearable style="width: 200px;">
-              <el-option label="软件工程" value="MAJOR_0" />
-              <el-option label="软件工程" value="MAJOR_1" />
-              <el-option label="大数据" value="MAJOR_2" />
-              <el-option label="人工智能" value="MAJOR_3" />
+              <el-option label="软件工程" value="0" />
+              <el-option label="数字媒体技术" value="1" />
+              <el-option label="大数据" value="2" />
+              <el-option label="AI" value="3" />
             </el-select>
           </el-form-item>
           <el-form-item label="关键词">
@@ -125,10 +125,10 @@
 
         <el-form-item label="专业" prop="major">
           <el-select v-model="sectionForm.major" placeholder="请选择专业">
-            <el-option label="软件工程" value="MAJOR_0" />
-            <el-option label="软件工程" value="MAJOR_1" />
-            <el-option label="大数据" value="MAJOR_2" />
-            <el-option label="人工智能" value="MAJOR_3" />
+            <el-option label="软件工程" value="0" />
+            <el-option label="数字媒体技术" value="1" />
+            <el-option label="大数据" value="2" />
+            <el-option label="AI" value="3" />
           </el-select>
         </el-form-item>
 
@@ -208,14 +208,14 @@ import { Plus, UserFilled } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import {
-  getSectionList,
+  getSectionListAll,
   addSection,
   updateSection,
   deleteSection as deleteSectionApi,
   assignSection,
   searchSections
 } from '@/api/section'
-import { getTeacherList, searchUsers } from '@/api/admin'
+import { searchUsers, getUserInfo } from '@/api/admin'
 import type { SectionInfo, UserInfo } from '@/types'
 
 const loading = ref(false)
@@ -244,6 +244,7 @@ const sectionList = ref<SectionInfo[]>([])
 const selectedSections = ref<SectionInfo[]>([])
 const currentSection = ref<SectionInfo>({} as SectionInfo)
 const teacherOptions = ref<UserInfo[]>([])
+const teacherCache = ref<Map<number, string>>(new Map()) // 教师ID到姓名的缓存
 
 const sectionForm = reactive({
   grade: '',
@@ -272,14 +273,23 @@ const formRules: FormRules = {
 }
 
 // 专业名称映射
-const getMajorName = (major: string) => {
+const getMajorName = (major: string | number) => {
+  // 如果已经是中文名称，直接返回
+  if (typeof major === 'string' && /[\u4e00-\u9fa5]/.test(major)) {
+    return major
+  }
+
   const majorMap: Record<string, string> = {
     'MAJOR_0': '软件工程',
     'MAJOR_1': '数字媒体技术',
     'MAJOR_2': '大数据',
-    'MAJOR_3': '人工智能'
+    'MAJOR_3': 'AI',
+    '0': '软件工程',
+    '1': '数字媒体技术',
+    '2': '大数据',
+    '3': 'AI'
   }
-  return majorMap[major] || major
+  return majorMap[major.toString()] || major.toString()
 }
 
 // 获取班级列表
@@ -291,17 +301,73 @@ const fetchSectionList = async () => {
       size: pagination.size
     }
 
-    if (searchForm.grade) params.grade = searchForm.grade
-    if (searchForm.keyword) params.keyword = searchForm.keyword
+    // 只在有值时才添加参数
+    if (searchForm.grade) {
+      params.grade = searchForm.grade
+    }
+    if (searchForm.keyword) {
+      params.keyword = searchForm.keyword
+    }
+    if (searchForm.major) {
+      params.major = searchForm.major
+    }
 
-    // 如果有搜索条件，使用搜索接口，否则使用普通列表接口
-    const response = searchForm.keyword || searchForm.grade
-      ? await searchSections(params)
-      : await getSectionList(params)
+    // 判断使用哪个接口
+    const hasSearchCondition = searchForm.keyword || searchForm.grade || searchForm.major
+    let response: any
+
+    if (hasSearchCondition) {
+      // 有搜索条件，使用搜索接口
+      response = await searchSections(params)
+    } else {
+      // 无搜索条件，使用获取所有班级接口
+      response = await getSectionListAll(params)
+    }
 
     if (response.code === 200 && response.data) {
-      sectionList.value = response.data.section || []
-      pagination.total = response.data.section?.length || 0
+      let rawData: any[] = []
+
+      // 统一处理响应格式（搜索和全部列表使用相同的格式）
+      if (Array.isArray(response.data)) {
+        // 如果直接返回数组
+        rawData = response.data
+        pagination.total = response.data.length
+      } else if (response.data.list) {
+        // 如果返回对象包含 list 字段（统一格式）
+        rawData = response.data.list
+        pagination.total = response.data.total || response.data.list.length
+      } else {
+        sectionList.value = []
+        pagination.total = 0
+        return
+      }
+
+      // 收集所有需要查询的教师ID
+      const advisorIds = [...new Set(rawData.map((item: any) => item.advisorId).filter(Boolean))]
+
+      // 批量获取教师信息
+      for (const advisorId of advisorIds) {
+        if (!teacherCache.value.has(advisorId)) {
+          try {
+            const teacherResponse: any = await getUserInfo(advisorId)
+            if (teacherResponse.code === 200 && teacherResponse.data) {
+              const username = teacherResponse.data.user?.username || teacherResponse.data.username
+              if (username) {
+                teacherCache.value.set(advisorId, username)
+              }
+            }
+          } catch (error) {
+            console.error(`获取教师信息失败 (ID: ${advisorId}):`, error)
+          }
+        }
+      }
+
+      // 补充缺失的字段
+      sectionList.value = rawData.map((item: any) => ({
+        ...item,
+        advisor: item.advisorId ? (teacherCache.value.get(item.advisorId) || '未知') : '未分配',
+        studentCount: item.studentCount || 0
+      }))
     } else {
       sectionList.value = []
       pagination.total = 0
@@ -447,7 +513,7 @@ const handleSubmit = async () => {
       submitLoading.value = true
 
       try {
-        const data = {
+        const data: any = {
           grade: sectionForm.grade,
           number: sectionForm.number,
           major: sectionForm.major,
