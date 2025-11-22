@@ -35,14 +35,14 @@
           </el-select>
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="fetchGradeList" :disabled="!selectedCourseId">
-            查询成绩
-          </el-button>
           <el-button type="success" @click="handleBatchSave" :disabled="!hasChanges">
             保存成绩
           </el-button>
           <el-button type="warning" @click="handleReleaseGrade" :disabled="!selectedCourseId">
             发布成绩
+          </el-button>
+          <el-button type="primary" @click="fetchGradeList" :disabled="!selectedCourseId">
+            刷新
           </el-button>
         </el-form-item>
       </el-form>
@@ -56,10 +56,10 @@
           <span v-if="currentCourse" class="course-info">
             {{ currentCourse.name }} - {{ currentCourse.classNum }}
             <el-tag size="small" style="margin-left: 8px;">
-              平时成绩占比: {{ currentCourse.regularRatio || 40 }}%
+              平时成绩占比: {{ (currentCourse.regularRatio || 0.4) * 100 }}%
             </el-tag>
             <el-tag size="small" type="success" style="margin-left: 8px;">
-              期末成绩占比: {{ currentCourse.finalRatio || 60 }}%
+              期末成绩占比: {{ (currentCourse.finalRatio || 0.6) * 100 }}%
             </el-tag>
           </span>
         </div>
@@ -73,7 +73,7 @@
         :empty-text="selectedCourseId ? '暂无学生数据' : '请先选择课程'"
       >
         <el-table-column type="index" label="序号" width="60" align="center" />
-        <el-table-column prop="studentName" label="学生姓名" width="120" align="center" />
+        <el-table-column prop="username" label="学生姓名" width="120" align="center" />
         <el-table-column prop="studentId" label="学号" width="120" align="center" />
         <el-table-column label="平时成绩" width="150" align="center">
           <template #default="{ row }">
@@ -198,7 +198,7 @@ const fetchCourseList = async () => {
     if (response.code === 200 && response.data) {
       // 只显示已审核通过的课程
       const allCourses = Array.isArray(response.data) ? response.data : response.data.list || []
-      courseList.value = allCourses.filter((course: Course) => course.status === '已审核')
+      courseList.value = allCourses.filter((course: Course) => course.status === '已通过')
     }
   } catch (error) {
     console.error('获取课程列表失败:', error)
@@ -212,6 +212,8 @@ const fetchCourseList = async () => {
 const handleCourseChange = () => {
   if (selectedCourseId.value) {
     currentCourse.value = courseList.value.find(c => c.id === selectedCourseId.value) || null
+    // 自动加载成绩列表
+    fetchGradeList()
   } else {
     currentCourse.value = null
     gradeList.value = []
@@ -249,9 +251,9 @@ const fetchGradeList = async () => {
 
 // 成绩变更
 const handleScoreChange = (row: any) => {
-  // 计算总评成绩
-  const regularRatio = (currentCourse.value?.regularRatio || 40) / 100
-  const finalRatio = (currentCourse.value?.finalRatio || 60) / 100
+  // 计算总评成绩（后端返回的是小数形式，如0.4表示40%）
+  const regularRatio = currentCourse.value?.regularRatio || 0.4
+  const finalRatio = currentCourse.value?.finalRatio || 0.6
 
   if (row.regular !== null && row.regular !== undefined &&
       row.finalScore !== null && row.finalScore !== undefined) {
