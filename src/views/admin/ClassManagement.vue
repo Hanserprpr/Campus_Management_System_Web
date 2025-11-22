@@ -30,10 +30,10 @@
           </el-form-item>
           <el-form-item label="专业">
             <el-select v-model="searchForm.major" placeholder="请选择专业" clearable style="width: 200px;">
-              <el-option label="软件工程" value="0" />
-              <el-option label="数字媒体技术" value="1" />
-              <el-option label="大数据" value="2" />
-              <el-option label="AI" value="3" />
+              <el-option label="软件工程" :value="0" />
+              <el-option label="数字媒体技术" :value="1" />
+              <el-option label="大数据" :value="2" />
+              <el-option label="AI" :value="3" />
             </el-select>
           </el-form-item>
           <el-form-item label="关键词">
@@ -125,10 +125,10 @@
 
         <el-form-item label="专业" prop="major">
           <el-select v-model="sectionForm.major" placeholder="请选择专业">
-            <el-option label="软件工程" value="0" />
-            <el-option label="数字媒体技术" value="1" />
-            <el-option label="大数据" value="2" />
-            <el-option label="AI" value="3" />
+            <el-option label="软件工程" value="MAJOR_0" />
+            <el-option label="数字媒体技术" value="MAJOR_1" />
+            <el-option label="大数据" value="MAJOR_2" />
+            <el-option label="AI" value="MAJOR_3" />
           </el-select>
         </el-form-item>
 
@@ -230,7 +230,7 @@ const formRef = ref<FormInstance>()
 
 const searchForm = reactive({
   grade: '',
-  major: '',
+  major: null as number | null,
   keyword: ''
 })
 
@@ -430,7 +430,7 @@ const handleSearch = () => {
 const resetSearch = () => {
   Object.assign(searchForm, {
     grade: '',
-    major: '',
+    major: null,
     keyword: ''
   })
   pagination.page = 1

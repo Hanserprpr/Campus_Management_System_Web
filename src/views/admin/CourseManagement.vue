@@ -5,6 +5,10 @@
         <div class="card-header">
           <span>课程管理</span>
           <div class="header-actions">
+            <el-button type="warning" @click="showPendingCourses">
+              <el-icon><DocumentChecked /></el-icon>
+              待审批课程
+            </el-button>
             <el-button type="success" @click="handleAutoSchedule">
               <el-icon><Calendar /></el-icon>
               自动排课
@@ -27,14 +31,6 @@
                 :label="term.term"
                 :value="term.term"
               />
-            </el-select>
-          </el-form-item>
-          <el-form-item label="状态">
-            <el-select v-model="searchForm.status" placeholder="请选择状态" clearable style="width: 120px;">
-              <el-option label="全部" value="" />
-              <el-option label="待审批" value="待审批" />
-              <el-option label="已通过" value="已通过" />
-              <el-option label="已拒绝" value="已拒绝" />
             </el-select>
           </el-form-item>
           <el-form-item>
@@ -192,7 +188,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import { Calendar } from '@element-plus/icons-vue'
+import { Calendar, DocumentChecked } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   getPendingCourses,
@@ -213,8 +209,7 @@ const submitLoading = ref(false)
 
 const searchForm = reactive({
   keyword: '',
-  term: '',
-  status: ''
+  term: ''
 })
 
 const pagination = reactive({
@@ -289,32 +284,14 @@ const fetchCourseList = async () => {
   loading.value = true
   try {
     let response: any
-    let allCourses: any[] = []
 
-    // 如果只是按状态筛选"待审批"，使用专门的接口
-    if (searchForm.status === '待审批' && !searchForm.keyword && !searchForm.term) {
-      response = await getPendingCourses()
-    } else if (searchForm.keyword) {
-      // 如果有关键词或学期搜索，使用搜索API
+    if (searchForm.keyword) {
+      // 如果有关键词搜索，使用搜索API
       const searchParams: any = {}
       if (searchForm.keyword) searchParams.keyword = searchForm.keyword
       if (searchForm.term) searchParams.term = searchForm.term
 
       response = await searchCourses(searchParams)
-
-      // 如果有状态筛选，在客户端进行过滤
-      if (response.code === 200 && response.data && searchForm.status) {
-        const filteredData = Array.isArray(response.data)
-          ? response.data.filter((course: any) => course.status === searchForm.status)
-          : (response.data.list || []).filter((course: any) => course.status === searchForm.status)
-
-        if (Array.isArray(response.data)) {
-          response.data = filteredData
-        } else {
-          response.data.list = filteredData
-          response.data.total = filteredData.length
-        }
-      }
     } else {
       // 获取所有课程列表
       const listParams: any = {
@@ -326,20 +303,6 @@ const fetchCourseList = async () => {
         listParams.term = searchForm.term
       }
       response = await getAllCourses(listParams)
-
-      // 如果有状态筛选，在客户端进行过滤
-      if (response.code === 200 && response.data && searchForm.status) {
-        const filteredData = Array.isArray(response.data)
-          ? response.data.filter((course: any) => course.status === searchForm.status)
-          : (response.data.list || []).filter((course: any) => course.status === searchForm.status)
-
-        if (Array.isArray(response.data)) {
-          response.data = filteredData
-        } else {
-          response.data.list = filteredData
-          response.data.total = filteredData.length
-        }
-      }
     }
 
     if (response.code === 200 && response.data) {
@@ -377,11 +340,46 @@ const handleSearch = () => {
 const resetSearch = () => {
   Object.assign(searchForm, {
     keyword: '',
-    term: '',
-    status: ''
+    term: ''
   })
   pagination.page = 1
   fetchCourseList()
+}
+
+// 显示待审批课程
+const showPendingCourses = async () => {
+  loading.value = true
+  try {
+    const response = await getPendingCourses()
+
+    if (response.code === 200 && response.data) {
+      if (Array.isArray(response.data)) {
+        courseList.value = response.data
+        pagination.total = response.data.length
+      } else if (response.data.list) {
+        courseList.value = response.data.list
+        pagination.total = response.data.total || response.data.list.length
+      } else {
+        courseList.value = []
+        pagination.total = 0
+      }
+
+      // 清空搜索条件
+      Object.assign(searchForm, {
+        keyword: '',
+        term: ''
+      })
+
+      ElMessage.success(`加载了 ${courseList.value.length} 条待审批课程`)
+    } else {
+      ElMessage.error('获取待审批课程失败')
+    }
+  } catch (error) {
+    console.error('获取待审批课程失败:', error)
+    ElMessage.error('获取待审批课程失败')
+  } finally {
+    loading.value = false
+  }
 }
 
 // 选择变化
