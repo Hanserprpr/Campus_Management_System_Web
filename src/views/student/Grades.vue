@@ -303,18 +303,3 @@ onMounted(() => {
 }
 </style>
 
-<style lang="scss" scoped>
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.grades-container {
-  min-height: 400px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-</style>
-

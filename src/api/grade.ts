@@ -43,3 +43,44 @@ export function getGradeMessage(term?: string): Promise<ApiResponse<GradeStats>>
 export function getGradeList( term: string): Promise<ApiResponse<Grade[]>>{
   return request.get<Grade[]>('/grade/getGrade', {term});
 }
+
+/**
+ * 教师：获取课程学生成绩列表
+ * @param courseId 课程ID
+ * @returns 学生成绩列表
+ */
+export function getCourseGradeList(courseId: number): Promise<ApiResponse<Grade[]>> {
+  return request.post<Grade[]>('/grade/getGradeList', null, {
+    params: { courseId }
+  })
+}
+
+/**
+ * 教师：录入/更新成绩
+ * @param params 成绩信息
+ * @returns 响应数据
+ */
+export function setGrade(params: {
+  id?: number
+  studentId: number
+  courseId: number
+  regular?: number
+  finalScore?: number
+  grade?: number
+  term?: string
+}): Promise<ApiResponse<null>> {
+  return request.post<null>('/grade/setGrade', null, {
+    params
+  })
+}
+
+/**
+ * 教师：发布成绩
+ * @param courseId 课程ID
+ * @returns 响应数据
+ */
+export function releaseGrade(courseId: number): Promise<ApiResponse<null>> {
+  return request.post<null>('/grade/releaseGrade', null, {
+    params: { courseId }
+  })
+}
