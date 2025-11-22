@@ -1,96 +1,98 @@
 <template>
-  <div class="page-container">
-    <div class="welcome-section">
-      <h2>欢迎，{{ userStore.username }}！</h2>
-      <p class="date">{{ currentDate }}</p>
-    </div>
-    
-    <el-col class="content-col">
-      <el-col :span="24">
-        <el-card class="content-card">
-          <template #header>
-            <div class="card-header">
-              <span>今日课程</span>
-              <el-button style="margin-left: 18px;" @click="router.push('/student/schedule')"> 查看课表 </el-button>
-            </div>
-          </template>
-          
-          <div v-if="todayCourses.length > 0" class="course-list">
-            <div
-              v-for="course in todayCourses"
-              :key="course.id"
-              class="course-item"
-            >
-              <div class="course-time">{{ course.time }}</div>
-              <div class="course-info">
-                <div class="course-name">{{ course.name }}</div>
-                <div class="course-detail">
-                  {{ course.classroom }} | {{ course.teacherName }}
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <el-empty v-else description="今天没有课程" />
-        </el-card>
-      </el-col>
+  <div class="student-home">
+    <div class="page-container">
+      <div class="welcome-section">
+        <h2>欢迎，{{ userStore.username }}！</h2>
+        <p class="date">{{ currentDate }}</p>
+      </div>
       
-      <el-col :span="24">
-        <el-card class="content-card">
-          <template #header>
-            <div class="card-header">
-              <span>最新公告</span>
-            </div>
-          </template>
-          
-          <div v-if="announcements.length > 0" class="announcement-list">
-            <div
-              v-for="announcement in announcements"
-              :key="announcement.id"
-              class="announcement-item"
-              @click="showAnnouncementDetail(announcement)"
-            >
-              <div class="announcement-header">
-                <div class="announcement-title">
-                  <el-tag v-if="announcement.isTop === 1" type="danger" size="small" style="margin-right: 8px;">置顶</el-tag>
-                  {{ announcement.title }}
+      <el-col class="content-col">
+        <el-col :span="24">
+          <el-card class="content-card">
+            <template #header>
+              <div class="card-header">
+                <span>今日课程</span>
+                <el-button style="margin-left: 18px;" @click="router.push('/student/schedule')"> 查看课表 </el-button>
+              </div>
+            </template>
+            
+            <div v-if="todayCourses.length > 0" class="course-list">
+              <div
+                v-for="course in todayCourses"
+                :key="course.id"
+                class="course-item"
+              >
+                <div class="course-time">{{ course.time }}</div>
+                <div class="course-info">
+                  <div class="course-name">{{ course.name }}</div>
+                  <div class="course-detail">
+                    {{ course.classroom }} | {{ course.teacherName }}
+                  </div>
                 </div>
               </div>
-              <div class="announcement-footer">
-                <span class="announcement-publisher">发布者: {{ announcement.publisher }}</span>
-                <span class="announcement-time">{{ formatDate(announcement.createTime) }}</span>
+            </div>
+            
+            <el-empty v-else description="今天没有课程" />
+          </el-card>
+        </el-col>
+        
+        <el-col :span="24">
+          <el-card class="content-card">
+            <template #header>
+              <div class="card-header">
+                <span>最新公告</span>
+              </div>
+            </template>
+            
+            <div v-if="announcements.length > 0" class="announcement-list">
+              <div
+                v-for="announcement in announcements"
+                :key="announcement.id"
+                class="announcement-item"
+                @click="showAnnouncementDetail(announcement)"
+              >
+                <div class="announcement-header">
+                  <div class="announcement-title">
+                    <el-tag v-if="announcement.isTop === 1" type="danger" size="small" style="margin-right: 8px;">置顶</el-tag>
+                    {{ announcement.title }}
+                  </div>
+                </div>
+                <div class="announcement-footer">
+                  <span class="announcement-publisher">发布者: {{ announcement.publisher }}</span>
+                  <span class="announcement-time">{{ formatDate(announcement.createTime) }}</span>
+                </div>
               </div>
             </div>
-          </div>
 
-          <el-empty v-else description="暂无公告" />
-        </el-card>
+            <el-empty v-else description="暂无公告" />
+          </el-card>
+        </el-col>
       </el-col>
-    </el-col>
-  </div>
+    </div>
 
-  <!-- 公告详情对话框 -->
-  <el-dialog v-model="showAnnouncementDialog" title="公告详情" width="600px">
-    <div v-if="currentAnnouncement" class="announcement-detail">
-      <div class="detail-header">
-        <h3 class="detail-title">
-          <el-tag v-if="currentAnnouncement.isTop === 1" type="danger" size="small" style="margin-right: 8px;">置顶</el-tag>
-          {{ currentAnnouncement.title }}
-        </h3>
-        <div class="detail-meta">
-          <span>发布者: {{ currentAnnouncement.publisher }}</span>
-          <span>发布时间: {{ formatDate(currentAnnouncement.createTime) }}</span>
+    <!-- 公告详情对话框 -->
+    <el-dialog v-model="showAnnouncementDialog" title="公告详情" width="600px">
+      <div v-if="currentAnnouncement" class="announcement-detail">
+        <div class="detail-header">
+          <h3 class="detail-title">
+            <el-tag v-if="currentAnnouncement.isTop === 1" type="danger" size="small" style="margin-right: 8px;">置顶</el-tag>
+            {{ currentAnnouncement.title }}
+          </h3>
+          <div class="detail-meta">
+            <span>发布者: {{ currentAnnouncement.publisher }}</span>
+            <span>发布时间: {{ formatDate(currentAnnouncement.createTime) }}</span>
+          </div>
+        </div>
+        <el-divider />
+        <div class="detail-content">
+          {{ currentAnnouncement.content }}
         </div>
       </div>
-      <el-divider />
-      <div class="detail-content">
-        {{ currentAnnouncement.content }}
-      </div>
-    </div>
-    <template #footer>
-      <el-button @click="showAnnouncementDialog = false">关闭</el-button>
-    </template>
-  </el-dialog>
+      <template #footer>
+        <el-button @click="showAnnouncementDialog = false">关闭</el-button>
+      </template>
+    </el-dialog>
+  </div>
 </template>
 
 <script setup lang="ts">
