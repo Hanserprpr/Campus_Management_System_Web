@@ -4,10 +4,16 @@
       <template #header>
         <div class="card-header">
           <span>学生管理</span>
-          <el-button type="primary" @click="showAddDialog = true">
-            <el-icon><Plus /></el-icon>
-            添加学生
-          </el-button>
+          <div class="header-actions">
+            <el-button type="primary" @click="showAddDialog = true">
+              <el-icon><Plus /></el-icon>
+              添加学生
+            </el-button>
+            <el-button type="success" @click="showUploadDialog = true">
+              <el-icon><Upload /></el-icon>
+              批量导入
+            </el-button>
+          </div>
         </div>
       </template>
 
@@ -220,24 +226,88 @@
         <el-descriptions-item label="籍贯">{{ currentStudent.nation }}</el-descriptions-item>
       </el-descriptions>
     </el-dialog>
+
+    <!-- 批量导入对话框 -->
+    <el-dialog v-model="showUploadDialog" title="批量导入学生" width="500px" @close="resetUpload">
+      <div class="upload-container">
+        <el-alert
+          title="导入说明"
+          type="info"
+          :closable="false"
+          style="margin-bottom: 20px;"
+        >
+          <template #default>
+            <div>
+              <p>1. 请下载模板文件，按照模板格式填写学生信息</p>
+              <p>2. 支持 Excel 文件格式（.xlsx, .xls）</p>
+              <p>3. 必填字段：学号、姓名、性别、邮箱、电话、学院、专业</p>
+              <p>4. 性别填写：男 或 女</p>
+              <p>5. 专业填写：MAJOR_0(软件工程)、MAJOR_1(数字媒体技术)、MAJOR_2(大数据)、MAJOR_3(AI)</p>
+            </div>
+          </template>
+        </el-alert>
+
+        <el-upload
+          ref="uploadRef"
+          class="upload-demo"
+          drag
+          :auto-upload="false"
+          :limit="1"
+          :on-change="handleFileChange"
+          :on-exceed="handleExceed"
+          accept=".xlsx,.xls"
+        >
+          <el-icon class="el-icon--upload"><UploadFilled /></el-icon>
+          <div class="el-upload__text">
+            将文件拖到此处，或<em>点击上传</em>
+          </div>
+          <template #tip>
+            <div class="el-upload__tip">
+              只能上传 xlsx/xls 文件，且不超过 10MB
+            </div>
+          </template>
+        </el-upload>
+
+        <div v-if="uploadFile" class="file-info">
+          <el-icon><Document /></el-icon>
+          <span>{{ uploadFile.name }}</span>
+          <el-button type="danger" size="small" text @click="removeFile">
+            删除
+          </el-button>
+        </div>
+      </div>
+
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="showUploadDialog = false">取消</el-button>
+          <el-button type="primary" :loading="uploadLoading" @click="handleUpload" :disabled="!uploadFile">
+            开始导入
+          </el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import { Plus } from '@element-plus/icons-vue'
+import { Plus, Upload, UploadFilled, Document } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import type { FormInstance, FormRules } from 'element-plus'
-import { addUser, updateUser, searchUsers, getStudentList } from '@/api/admin'
+import type { FormInstance, FormRules, UploadInstance, UploadFile, UploadRawFile } from 'element-plus'
+import { addUser, updateUser, searchUsers, getStudentList, uploadUserExcel } from '@/api/admin'
 import { deleteStudent as deleteStudentApi } from '@/api/student'
 import type { UserInfo } from '@/types'
 
 const loading = ref(false)
 const showAddDialog = ref(false)
 const showDetailDialog = ref(false)
+const showUploadDialog = ref(false)
 const isEdit = ref(false)
 const submitLoading = ref(false)
+const uploadLoading = ref(false)
 const formRef = ref<FormInstance>()
+const uploadRef = ref<UploadInstance>()
+const uploadFile = ref<File | null>(null)
 
 const searchForm = reactive({
   sduid: '',
@@ -536,6 +606,74 @@ const handleSubmit = async () => {
   })
 }
 
+// 文件选择变化
+const handleFileChange = (file: UploadFile) => {
+  uploadFile.value = file.raw as File
+}
+
+// 文件超出限制
+const handleExceed = () => {
+  ElMessage.warning('只能上传一个文件')
+}
+
+// 移除文件
+const removeFile = () => {
+  uploadFile.value = null
+  if (uploadRef.value) {
+    uploadRef.value.clearFiles()
+  }
+}
+
+// 重置上传
+const resetUpload = () => {
+  uploadFile.value = null
+  if (uploadRef.value) {
+    uploadRef.value.clearFiles()
+  }
+}
+
+// 处理上传
+const handleUpload = async () => {
+  if (!uploadFile.value) {
+    ElMessage.warning('请选择要上传的文件')
+    return
+  }
+
+  // 验证文件类型
+  const fileName = uploadFile.value.name
+  const fileExt = fileName.substring(fileName.lastIndexOf('.')).toLowerCase()
+  if (!['.xlsx', '.xls'].includes(fileExt)) {
+    ElMessage.error('只支持 Excel 文件格式（.xlsx, .xls）')
+    return
+  }
+
+  // 验证文件大小（10MB）
+  const maxSize = 10 * 1024 * 1024
+  if (uploadFile.value.size > maxSize) {
+    ElMessage.error('文件大小不能超过 10MB')
+    return
+  }
+
+  uploadLoading.value = true
+  try {
+    const response = await uploadUserExcel(uploadFile.value)
+
+    if (response.code === 200) {
+      ElMessage.success('导入成功')
+      showUploadDialog.value = false
+      resetUpload()
+      fetchStudentList()
+    } else {
+      ElMessage.error(response.msg || '导入失败')
+    }
+  } catch (error: any) {
+    console.error('上传失败:', error)
+    ElMessage.error(error.response?.data?.msg || '导入失败，请检查文件格式')
+  } finally {
+    uploadLoading.value = false
+  }
+}
+
 onMounted(() => {
   fetchStudentList()
 })
@@ -550,6 +688,11 @@ onMounted(() => {
   font-weight: bold;
 }
 
+.header-actions {
+  display: flex;
+  gap: 10px;
+}
+
 .search-bar {
   margin-bottom: 20px;
   padding: 20px;
@@ -561,6 +704,41 @@ onMounted(() => {
   margin-top: 20px;
   display: flex;
   justify-content: center;
+}
+
+.upload-container {
+  .el-alert {
+    p {
+      margin: 5px 0;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+  }
+
+  .upload-demo {
+    margin-top: 20px;
+  }
+
+  .file-info {
+    margin-top: 15px;
+    padding: 10px;
+    background: #f5f7fa;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    .el-icon {
+      font-size: 20px;
+      color: #409eff;
+    }
+
+    span {
+      flex: 1;
+      font-size: 14px;
+      color: #606266;
+    }
+  }
 }
 
 :deep(.el-table) {
@@ -586,6 +764,16 @@ onMounted(() => {
   .el-dialog__body {
     padding: 10px 20px 20px;
   }
+}
+
+:deep(.el-upload-dragger) {
+  padding: 40px;
+}
+
+:deep(.el-icon--upload) {
+  font-size: 67px;
+  color: #409eff;
+  margin-bottom: 16px;
 }
 </style>
 
