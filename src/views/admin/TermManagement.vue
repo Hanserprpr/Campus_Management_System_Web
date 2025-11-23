@@ -81,7 +81,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getTermList, addTerm, editSelection } from '@/api/common'
 import { autoSchedule } from '@/api/course'
@@ -94,15 +94,15 @@ const successMessage = ref('')
 const currentTermInfo = ref<Term | null>(null)
 
 // 选课状态
-const selectionStatus = computed(() => {
+const selectionStatus = computed<{ text: string; type: 'success' | 'info' | 'warning' | 'danger' | 'primary'; open: boolean }>(() => {
   if (!currentTermInfo.value) {
-    return { text: '未开始选课', type: 'info', open: false }
+    return { text: '未开始选课', type: 'info' as const, open: false }
   }
-  
+
   if (currentTermInfo.value.open) {
-    return { text: '选课中', type: 'success', open: true }
+    return { text: '选课中', type: 'success' as const, open: true }
   } else {
-    return { text: '未开始选课', type: 'info', open: false }
+    return { text: '未开始选课', type: 'info' as const, open: false }
   }
 })
 

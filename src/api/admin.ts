@@ -98,12 +98,29 @@ export function deleteUser(userId: number): Promise<ApiResponse<null>> {
 }
 
 /**
+ * 用户详细信息响应
+ */
+export interface UserDetailResponse {
+  user: UserInfo
+  status: {
+    id: number
+    grade: number
+    sectionId: number
+    section: string
+    status: string
+    admission: number
+    graduation: number
+  }
+  section: any
+}
+
+/**
  * 获取用户详细信息
  * @param userId 用户ID
  * @returns 用户详细信息
  */
-export function getUserInfo(userId: number): Promise<ApiResponse<UserInfo>> {
-  return request.get<UserInfo>('/admin/getUserInfo', { userId })
+export function getUserInfo(userId: number): Promise<ApiResponse<UserDetailResponse>> {
+  return request.get<UserDetailResponse>('/admin/getUserInfo', { userId })
 }
 
 /**

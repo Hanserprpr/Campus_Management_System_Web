@@ -97,16 +97,16 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { Reading, Document, TrophyBase, Calendar } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
-import { formatDate, getCurrentDate, getDayOfWeekName } from '@/utils/date'
-//import { getStudentStats } from '@/api/student'
+import { useAppStore } from '@/stores/app'
+import { formatDate, getCurrentDate, getDayOfWeekName, getDayOfWeek } from '@/utils/date'
 import { getStudentNoticeList } from '@/api/notice'
-import { getCurrentTerm, getCurrentWeek } from '@/api/common'
+import { getCourseSchedule } from '@/api/course'
 import type { Course, Announcement } from '@/types'
 import router from '@/router'
 
 const userStore = useUserStore()
+const appStore = useAppStore()
 
 const currentDate = ref(getCurrentDate() + ' ' + getDayOfWeekName())
 
@@ -142,12 +142,78 @@ const currentAnnouncement = ref<Announcement | null>(null)
 //   }
 // }
 
+// 获取时间段文本
+const getTimeSlotText = (classOrder: number): string => {
+  const timeSlots: Record<number, string> = {
+    1: '08:00-09:50',
+    2: '10:10-12:00',
+    3: '14:00-15:50',
+    4: '16:10-18:00',
+    5: '19:00-20:50'
+  }
+  return timeSlots[classOrder] || ''
+}
+
 const fetchTodayCourses = async () => {
   try {
-    todayCourses.value = []
+    // 获取当前学期
+    const currentTerm = await appStore.fetchCurrentTerm()
+    if (!currentTerm) {
+      console.warn('无法获取当前学期')
+      todayCourses.value = []
+      return
+    }
 
-    // 更新统计数据中的今日课程数量
-    stats.value.todayCourses = todayCourses.value.length
+    // 获取当前周的课表（这里假设当前是第1周，实际应该获取当前教学周）
+    const currentWeek = 1 // TODO: 应该从API获取当前教学周
+    const response = await getCourseSchedule(currentWeek, { term: currentTerm })
+
+    if (response.code === 200 && response.data) {
+      const allCourses = Array.isArray(response.data) ? response.data : []
+
+      // 获取今天是星期几 (1-5, 1表示周一，只有工作日有课)
+      // 测试：往后调1天
+      const today = getDayOfWeek() // 0-6, 0表示星期日
+      let todayIndex = today === 0 ? 7 : today // 转换为1-7，7表示星期日
+      todayIndex = todayIndex + 1 // 往后调1天
+      if (todayIndex > 7) todayIndex -= 7 // 如果大于7，减7天（例如周日+1=周一）
+
+      console.log('今天是星期几（原始）:', today)
+      console.log('今天是星期几（调整后）:', todayIndex)
+      console.log('所有课程:', allCourses)
+
+      // 筛选今日课程
+      // time字段范围：0-24，每天5节课（周一到周五）
+      // time = 0-4: 周一, 5-9: 周二, 10-14: 周三, 15-19: 周四, 20-24: 周五
+      // day = Math.floor(time / 5) + 1
+      const todaysCourses = allCourses.filter(course => {
+        const time = Number.parseInt(course.time as string)
+        const day = Math.floor(time / 5) + 1 // 1-5 对应周一到周五
+        console.log(`课程 ${course.name}: time=${time}, day=${day}, 是否匹配=${day === todayIndex}`)
+        return day === todayIndex
+      })
+
+      console.log('筛选后的今日课程:', todaysCourses)
+
+      // 处理课程数据，添加时间显示
+      todayCourses.value = todaysCourses.map(course => {
+        const time = Number.parseInt(course.time as string)
+        const classOrder = (time % 5) + 1 // 0-4 转换为 1-5
+
+        return {
+          ...course,
+          time: getTimeSlotText(classOrder),
+          period: classOrder
+        }
+      }).sort((a: any, b: any) => a.period - b.period) // 按时间段排序
+
+      console.log('处理后的今日课程:', todayCourses.value)
+
+      // 更新统计数据中的今日课程数量
+      stats.value.todayCourses = todayCourses.value.length
+    } else {
+      throw new Error('API返回错误')
+    }
   } catch (error) {
     console.error('获取今日课程失败:', error)
     todayCourses.value = []

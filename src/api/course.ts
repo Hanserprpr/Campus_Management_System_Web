@@ -58,7 +58,7 @@ export function getCourseSchedule(week: number = 1, param:{term?:string}) {
 
 // 教师：申请新课程
 export function applyCourse(data: Partial<Course>) {
-  return request.post('/teacher/course/apply', data)
+  return request.post('/class/create', data)
 }
 
 // 教师：搜索教师创建的课程列表
@@ -117,8 +117,23 @@ export function getAllCourses(params?: {
   return request.get('/class/list', params)
 }
 
-// 管理员：审核课程申请
-export function approveCourse(courseId: number, status: number, reason?: string, classNum?: Array<number>) {
-  return request.post(`/class/approve/${courseId}`, classNum, {params: { status, reason }})
+/**
+ * 管理员：审核课程申请
+ * @param courseId 课程ID
+ * @param status 审批状态（1通过，2拒绝）
+ * @param classNum 课序号（通过时必填）
+ * @param reason 拒绝理由（拒绝时必填）
+ * @param sectionId 班级ID列表（通过时可选）
+ */
+export function approveCourse(
+  courseId: number,
+  status: number,
+  classNum?: string,
+  reason?: string,
+  sectionId?: number[]
+) {
+  return request.post(`/class/approve/${courseId}`, sectionId, {
+    params: { status, classNum, reason }
+  })
 }
 

@@ -12,7 +12,7 @@
 
           <el-descriptions :column="2" border>
             <el-descriptions-item label="姓名">{{ userInfo.username || '-' }}</el-descriptions-item>
-            <el-descriptions-item label="学号/工号">{{ userInfo.sduid || '-' }}</el-descriptions-item>
+            <el-descriptions-item label="学号/工号">{{ userInfo.SDUId || '-' }}</el-descriptions-item>
             <el-descriptions-item label="性别">
               {{ userInfo.sex }}
             </el-descriptions-item>

@@ -149,12 +149,12 @@ const hasChanges = computed(() => {
 })
 
 // 获取成绩类型（用于显示颜色）
-const getScoreType = (score: number | null | undefined) => {
+const getScoreType = (score: number | null | undefined): 'success' | 'primary' | 'warning' | 'info' | 'danger' | undefined => {
   if (score === null || score === undefined) return 'info'
   if (score >= 90) return 'success'
   if (score >= 80) return 'primary'
   if (score >= 70) return 'warning'
-  if (score >= 60) return ''
+  if (score >= 60) return undefined
   return 'danger'
 }
 

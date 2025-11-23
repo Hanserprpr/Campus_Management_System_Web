@@ -596,7 +596,7 @@
                         "college": {
                           "type": "string"
                         },
-                        "sduid": {
+                        "SDUId": {
                           "type": "string"
                         },
                         "politicsStatus": {
@@ -618,7 +618,7 @@
                         "nation",
                         "ethnic",
                         "college",
-                        "sduid",
+                        "SDUId",
                         "politicsStatus",
                         "gpa_rank"
                       ]
@@ -1246,7 +1246,7 @@
                             "college": {
                               "type": "string"
                             },
-                            "sduid": {
+                            "SDUId": {
                               "type": "string"
                             },
                             "politicsStatus": {
@@ -1268,7 +1268,7 @@
                             "nation",
                             "ethnic",
                             "college",
-                            "sduid",
+                            "SDUId",
                             "politicsStatus",
                             "gpa_rank"
                           ]
@@ -2076,7 +2076,7 @@
                           "college": {
                             "type": "null"
                           },
-                          "sduid": {
+                          "SDUId": {
                             "type": "string"
                           },
                           "politicsStatus": {
@@ -2098,7 +2098,7 @@
                           "nation",
                           "ethnic",
                           "college",
-                          "sduid",
+                          "SDUId",
                           "politicsStatus",
                           "gpa_rank"
                         ]
@@ -4282,7 +4282,7 @@
                               "college": {
                                 "type": "string"
                               },
-                              "sduid": {
+                              "SDUId": {
                                 "type": "string"
                               },
                               "politicsStatus": {
@@ -4304,7 +4304,7 @@
                               "nation",
                               "ethnic",
                               "college",
-                              "sduid",
+                              "SDUId",
                               "politicsStatus",
                               "gpa_rank"
                             ]
@@ -4830,7 +4830,7 @@
                             "college": {
                               "type": "string"
                             },
-                            "sduid": {
+                            "SDUId": {
                               "type": "string"
                             },
                             "politicsStatus": {
@@ -4852,7 +4852,7 @@
                             "nation",
                             "ethnic",
                             "college",
-                            "sduid",
+                            "SDUId",
                             "politicsStatus",
                             "gpa_rank"
                           ]

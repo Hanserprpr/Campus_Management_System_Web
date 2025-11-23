@@ -49,22 +49,19 @@
         @selection-change="handleSelectionChange"
       >
         <el-table-column type="selection" width="55" />
-        <el-table-column prop="sduid" label="学号" width="120" />
-        <el-table-column prop="username" label="姓名" width="100" />
-        <el-table-column prop="sex" label="性别" width="80">
+        <el-table-column prop="sduid" label="学号" />
+        <el-table-column prop="username" label="姓名" />
+        <el-table-column prop="sex" label="性别">
           <template #default="{ row }">
             {{ row.sex === '1' || row.sex === '男' ? '男' : '女' }}
           </template>
         </el-table-column>
-        <el-table-column prop="college" label="学院" width="120" />
-        <el-table-column prop="major" label="专业" width="150">
+        <el-table-column prop="major" label="专业">
           <template #default="{ row }">
             {{ getMajorName(row.major) }}
           </template>
         </el-table-column>
-        <el-table-column prop="email" label="邮箱" width="180" />
-        <el-table-column prop="phone" label="电话" width="120" />
-        <el-table-column label="操作" width="200" fixed="right">
+        <el-table-column label="操作" width="250" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" size="small" @click="editStudent(row)">
               编辑
@@ -163,7 +160,7 @@
             <el-form-item label="专业" prop="major">
               <el-select v-model="studentForm.major" placeholder="请选择专业">
                 <el-option label="软件工程" value="MAJOR_0" />
-                <el-option label="软件工程" value="MAJOR_1" />
+                <el-option label="数字媒体技术" value="MAJOR_1" />
                 <el-option label="大数据" value="MAJOR_2" />
                 <el-option label="人工智能" value="MAJOR_3" />
               </el-select>
@@ -242,7 +239,7 @@
               <p>2. 支持 Excel 文件格式（.xlsx, .xls）</p>
               <p>3. 必填字段：学号、姓名、性别、邮箱、电话、学院、专业</p>
               <p>4. 性别填写：男 或 女</p>
-              <p>5. 专业填写：MAJOR_0(软件工程)、MAJOR_1(数字媒体技术)、MAJOR_2(大数据)、MAJOR_3(AI)</p>
+              <p>5. 专业填写：MAJOR_0(软件工程)、MAJOR_1(数字媒体技术)、MAJOR_2(大数据)、MAJOR_3(人工智能)</p>
             </div>
           </template>
         </el-alert>
@@ -293,8 +290,8 @@
 import { ref, reactive, onMounted } from 'vue'
 import { Plus, Upload, UploadFilled, Document } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import type { FormInstance, FormRules, UploadInstance, UploadFile, UploadRawFile } from 'element-plus'
-import { addUser, updateUser, searchUsers, getStudentList, uploadUserExcel } from '@/api/admin'
+import type { FormInstance, FormRules, UploadInstance, UploadFile } from 'element-plus'
+import { addUser, updateUser, searchUsers, getStudentList, uploadUserExcel, getUserInfo } from '@/api/admin'
 import { deleteStudent as deleteStudentApi } from '@/api/student'
 import type { UserInfo } from '@/types'
 
@@ -364,6 +361,12 @@ const formRules: FormRules = {
   major: [
     { required: true, message: '请选择专业', trigger: 'change' }
   ],
+  ethnic: [
+    { required: true, message: '请输入民族', trigger: 'blur' }
+  ],
+  politicsStatus: [
+    { required: true, message: '请输入政治面貌', trigger: 'blur' }
+  ],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
     { min: 6, message: '密码长度不能少于6位', trigger: 'blur' }
@@ -373,14 +376,14 @@ const formRules: FormRules = {
 // 获取专业名称
 const getMajorName = (major: string | number) => {
   const majorMap: Record<string, string> = {
-    'MAJOR_0': '数字媒体技术',
+    'MAJOR_0': '软件工程',
     'MAJOR_1': '数字媒体技术',
     'MAJOR_2': '大数据',
-    'MAJOR_3': 'AI',
+    'MAJOR_3': '人工智能',
     '0': '软件工程',
     '1': '数字媒体技术',
     '2': '大数据',
-    '3': 'AI'
+    '3': '人工智能'
   }
   return majorMap[major.toString()] || major.toString()
 }
@@ -412,14 +415,7 @@ const fetchStudentList = async () => {
 
       // 添加筛选条件
       if (searchForm.major) {
-        // 将专业枚举转换为数字
-        const majorMap: Record<string, string> = {
-          'MAJOR_0': '0',
-          'MAJOR_1': '1',
-          'MAJOR_2': '2',
-          'MAJOR_3': '3'
-        }
-        listParams.major = majorMap[searchForm.major] || searchForm.major
+        listParams.major = searchForm.major
       }
 
       response = await getStudentList(listParams)
@@ -502,6 +498,13 @@ const editStudent = (student: UserInfo) => {
   isEdit.value = true
   currentStudent.value = student
 
+  // 将后端返回的数字格式专业转换为 MAJOR_X 格式
+  const majorValue = student.major?.toString()
+  let majorFormatted = student.major
+  if (majorValue === '0' || majorValue === '1' || majorValue === '2' || majorValue === '3') {
+    majorFormatted = `MAJOR_${majorValue}`
+  }
+
   Object.assign(studentForm, {
     sduid: student.sduid,
     username: student.username,
@@ -510,7 +513,7 @@ const editStudent = (student: UserInfo) => {
     phone: student.phone,
     ethnic: student.ethnic,
     college: student.college,
-    major: student.major,
+    major: majorFormatted,
     politicsStatus: student.politicsStatus,
     nation: student.nation,
     password: ''
@@ -520,9 +523,24 @@ const editStudent = (student: UserInfo) => {
 }
 
 // 查看学生详情
-const viewStudent = (student: UserInfo) => {
-  currentStudent.value = student
-  showDetailDialog.value = true
+const viewStudent = async (student: UserInfo) => {
+  try {
+    loading.value = true
+    const response = await getUserInfo(student.id)
+    if (response.code === 200 && response.data) {
+      // 后端返回的数据结构：{ user: {...}, status: {...}, section: {...} }
+      // 用户信息在 data.user 中
+      currentStudent.value = response.data.user
+      showDetailDialog.value = true
+    } else {
+      ElMessage.error('获取学生详情失败')
+    }
+  } catch (error) {
+    console.error('获取学生详情失败:', error)
+    ElMessage.error('获取学生详情失败')
+  } finally {
+    loading.value = false
+  }
 }
 
 // 删除学生
@@ -581,7 +599,9 @@ const handleSubmit = async () => {
         const formData = new FormData()
         Object.keys(studentForm).forEach(key => {
           if (studentForm[key as keyof typeof studentForm]) {
-            formData.append(key, studentForm[key as keyof typeof studentForm])
+            // 将 sduid 字段转换为 SDUId 发送给后端
+            const fieldName = key === 'sduid' ? 'SDUId' : key
+            formData.append(fieldName, studentForm[key as keyof typeof studentForm])
           }
         })
 

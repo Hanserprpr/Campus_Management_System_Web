@@ -344,7 +344,7 @@ const loadClassList = async () => {
   try {
     const response = await getSectionListAll({ page: 1, size: 500 })
     if (response.code === 200 && response.data) {
-      const sections = response.data.section || response.data.list || []
+      const sections = response.data.section || []
       classList.value = sections.map((section: any) => ({
         label: `${section.grade}级${section.number}班 (${section.major})`,
         value: section.id.toString()
@@ -365,7 +365,7 @@ const confirmApproval = async () => {
 
   approvalLoading.value = true
   try {
-    const classNums = approvalForm.value.selectedClasses
+    const classNums = approvalForm.value.selectedClasses.map(id => Number(id))
     console.log(classNums)
     await approveCourseApi(
       Number(currentCourse.value.id),

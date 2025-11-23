@@ -68,7 +68,7 @@
                 <div class="course-info">
                   <div class="course-name">{{ course.name }}</div>
                   <div class="course-detail">
-                    <span class="course-location">📍 {{ course.classroom }}</span>
+                    <span class="course-location">{{ course.classroom }}</span>
                     <span class="course-students" v-if="course.selectedCount">👥 {{ course.selectedCount }}人</span>
                   </div>
                 </div>
@@ -168,11 +168,11 @@ const currentAnnouncement = ref<Announcement | null>(null)
 
 // 课程时间段映射
 const timeSlots = [
-  { period: 1, time: '08:00-09:40' },
-  { period: 2, time: '10:00-11:40' },
-  { period: 3, time: '14:00-15:40' },
-  { period: 4, time: '16:00-17:40' },
-  { period: 5, time: '19:00-20:40' }
+  { period: 1, time: '08:00-09:50' },
+  { period: 2, time: '10:10-12:00' },
+  { period: 3, time: '14:00-15:50' },
+  { period: 4, time: '16:10-18:00' },
+  { period: 5, time: '19:00-20:50' }
 ]
 
 // 获取时间段显示文本
@@ -216,22 +216,34 @@ const fetchTodayCourses = async () => {
     if (response.code === 200 && response.data) {
       const allCourses = Array.isArray(response.data) ? response.data : []
 
-      // 获取今天是星期几 (1-7, 1表示星期一)
+      // 获取今天是星期几 (1-5, 1表示周一，只有工作日有课)
+      // 测试：往后调1天
       const today = getDayOfWeek() // 0-6, 0表示星期日
-      const todayIndex = today === 0 ? 7 : today // 转换为1-7，7表示星期日
+      let todayIndex = today === 0 ? 7 : today // 转换为1-7，7表示星期日
+      todayIndex = todayIndex + 1 // 往后调1天
+      if (todayIndex > 7) todayIndex -= 7 // 如果大于7，减7天（例如周日+1=周一）
+
+      console.log('教师端 - 今天是星期几（原始）:', today)
+      console.log('教师端 - 今天是星期几（调整后）:', todayIndex)
+      console.log('教师端 - 所有课程:', allCourses)
 
       // 筛选今日课程
-      // time字段格式：(day-1)*5 + classOrder，其中day是1-7，classOrder是1-5
+      // time字段范围：0-24，每天5节课（周一到周五）
+      // time = 0-4: 周一, 5-9: 周二, 10-14: 周三, 15-19: 周四, 20-24: 周五
+      // day = Math.floor(time / 5) + 1
       const todaysCourses = allCourses.filter(course => {
         const time = Number.parseInt(course.time as string)
-        const day = Math.floor(time / 5) + 1
+        const day = Math.floor(time / 5) + 1 // 1-5 对应周一到周五
+        console.log(`教师端 - 课程 ${course.name}: time=${time}, day=${day}, 是否匹配=${day === todayIndex}`)
         return day === todayIndex
       })
+
+      console.log('教师端 - 筛选后的今日课程:', todaysCourses)
 
       // 处理课程数据，添加时间显示
       todayCourses.value = todaysCourses.map(course => {
         const time = Number.parseInt(course.time as string)
-        const classOrder = time % 5 || 5 // 如果余数为0，则是第5节课
+        const classOrder = (time % 5) + 1 // 0-4 转换为 1-5
 
         return {
           ...course,
@@ -239,6 +251,8 @@ const fetchTodayCourses = async () => {
           period: classOrder
         }
       }).sort((a, b) => a.period - b.period) // 按时间段排序
+
+      console.log('教师端 - 处理后的今日课程:', todayCourses.value)
 
       // 更新统计数据中的今日课程数量
       stats.value.todayCourses = todayCourses.value.length

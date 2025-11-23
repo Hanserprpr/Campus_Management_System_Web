@@ -118,6 +118,7 @@ export interface Course {
   published?: boolean
   regularRatio?: number
   finalRatio?: number
+  timeSlot?: string  // 时间段显示文本（用于首页今日课程）
 }
 
 /**
@@ -178,7 +179,7 @@ export interface ScoreRecord {
 export interface ScoreEntry {
   studentId: number
   studentName: string
-  sduid: string
+  SDUId: string
   regularScore?: number
   finalScore?: number
   totalScore?: number
@@ -224,6 +225,7 @@ export interface Announcement {
   createTime: string
   updateTime?: string
   publisher?: string
+  isTop?: number  // 是否置顶（1: 置顶, 0: 不置顶）
 }
 
 /**

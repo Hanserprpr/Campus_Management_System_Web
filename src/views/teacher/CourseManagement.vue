@@ -42,15 +42,12 @@
         :data="courseList"
         style="width: 100%"
       >
-        <el-table-column prop="name" label="课程名称" min-width="150" />
-        <el-table-column prop="category" label="课程小类" width="100" />
-        <el-table-column prop="type" label="课程类型" width="100" />
-        <el-table-column prop="point" label="学分" width="80" />
-        <el-table-column prop="capacity" label="容量" width="80" />
-        <el-table-column prop="classroom" label="教室" width="120" />
-        <el-table-column prop="college" label="学院" width="120" />
-        <el-table-column prop="term" label="学期" width="120" />
-        <el-table-column prop="status" label="状态" width="100">
+        <el-table-column prop="name" label="课程名称" />
+        <el-table-column prop="category" label="课程小类" />
+        <el-table-column prop="type" label="课程类型" />
+        <el-table-column prop="point" label="学分" />
+        <el-table-column prop="term" label="学期" />
+        <el-table-column prop="status" label="状态">
           <template #default="{ row }">
             <el-tag
               :type="getStatusType(row.status)"
@@ -157,6 +154,14 @@
             </el-form-item>
           </el-col>
           <el-col :span="12">
+            <el-form-item label="课序号" prop="classNum">
+              <el-input v-model="courseForm.classNum" placeholder="请输入课序号" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-row :gutter="20">
+          <el-col :span="12">
             <el-form-item label="课程小类" prop="category">
               <el-select
                 v-model="courseForm.category"
@@ -175,9 +180,6 @@
               </el-select>
             </el-form-item>
           </el-col>
-        </el-row>
-
-        <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="课程类型" prop="type">
               <el-select v-model="courseForm.type" placeholder="请选择课程类型" style="width: 100%">
@@ -187,19 +189,22 @@
               </el-select>
             </el-form-item>
           </el-col>
+        </el-row>
+
+        <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="学分" prop="point">
               <el-input-number v-model="courseForm.point" :min="0" :max="10" :step="0.5" style="width: 100%" />
             </el-form-item>
           </el-col>
-        </el-row>
-
-        <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="容量" prop="capacity">
               <el-input-number v-model="courseForm.capacity" :min="1" :max="500" style="width: 100%" />
             </el-form-item>
           </el-col>
+        </el-row>
+
+        <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="教室">
               <el-select v-model="courseForm.classroom" placeholder="请选择教室（可选）" style="width: 100%" filterable clearable>
@@ -212,14 +217,14 @@
               </el-select>
             </el-form-item>
           </el-col>
-        </el-row>
-
-        <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="学院" prop="college">
               <el-input v-model="courseForm.college" placeholder="请输入学院" />
             </el-form-item>
           </el-col>
+        </el-row>
+
+        <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="学期" prop="term">
               <el-select v-model="courseForm.term" placeholder="请选择学期" style="width: 100%">
@@ -230,6 +235,14 @@
                   :value="term.term"
                 />
               </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="考核方式" prop="examination">
+              <el-radio-group v-model="courseForm.examination">
+                <el-radio :label="1">考试</el-radio>
+                <el-radio :label="0">考查</el-radio>
+              </el-radio-group>
             </el-form-item>
           </el-col>
         </el-row>
@@ -249,38 +262,31 @@
 
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="考核方式" prop="examination">
-              <el-radio-group v-model="courseForm.examination">
-                <el-radio :label="1">考试</el-radio>
-                <el-radio :label="0">考查</el-radio>
-              </el-radio-group>
-            </el-form-item>
-          </el-col>
-        </el-row>
-
-        <el-row :gutter="20">
-          <el-col :span="12">
             <el-form-item label="平时成绩占比" prop="regularRatio">
-              <el-input-number
-                v-model="regularRatioPercent"
-                :min="0"
-                :max="100"
-                :step="5"
-                style="width: 100%"
-              />
-              <span style="margin-left: 8px">%</span>
+              <div style="display: flex; align-items: center;">
+                <el-input-number
+                  v-model="regularRatioPercent"
+                  :min="0"
+                  :max="100"
+                  :step="5"
+                  style="flex: 1;"
+                />
+                <span style="margin-left: 8px">%</span>
+              </div>
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="期末成绩占比" prop="finalRatio">
-              <el-input-number
-                v-model="finalRatioPercent"
-                :min="0"
-                :max="100"
-                :step="5"
-                style="width: 100%"
-              />
-              <span style="margin-left: 8px">%</span>
+              <div style="display: flex; align-items: center;">
+                <el-input-number
+                  v-model="finalRatioPercent"
+                  :min="0"
+                  :max="100"
+                  :step="5"
+                  style="flex: 1;"
+                />
+                <span style="margin-left: 8px">%</span>
+              </div>
             </el-form-item>
           </el-col>
         </el-row>
@@ -362,6 +368,7 @@ const currentTermValue = ref('')
 // 课程表单
 const courseForm = reactive<Partial<CreateCourseDTO>>({
   name: '',
+  classNum: '',
   category: '无',
   type: '',
   point: 0,
@@ -402,6 +409,7 @@ const finalRatioPercent = computed({
 // 表单验证规则
 const formRules: FormRules = {
   name: [{ required: true, message: '请输入课程名称', trigger: 'blur' }],
+  classNum: [{ required: true, message: '请输入课序号', trigger: 'blur' }],
   category: [{ required: true, message: '请输入课程小类', trigger: 'blur' }],
   type: [{ required: true, message: '请选择课程类型', trigger: 'change' }],
   point: [{ required: true, message: '请输入学分', trigger: 'blur' }],
@@ -579,6 +587,7 @@ const editCourse = async (course: Course) => {
       // 填充表单
       Object.assign(courseForm, {
         name: response.data.name,
+        classNum: response.data.classNum,
         category: response.data.category,
         type: response.data.type,
         point: response.data.point,
@@ -685,6 +694,7 @@ const handleSubmit = async () => {
 const resetForm = () => {
   Object.assign(courseForm, {
     name: '',
+    classNum: '',
     category: '无',
     type: '',
     point: 0,

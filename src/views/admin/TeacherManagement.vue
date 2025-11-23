@@ -43,17 +43,14 @@
         @selection-change="handleSelectionChange"
       >
         <el-table-column type="selection" width="55" />
-        <el-table-column prop="sduid" label="工号" width="120" />
-        <el-table-column prop="username" label="姓名" width="100" />
-        <el-table-column prop="sex" label="性别" width="80">
+        <el-table-column prop="sduid" label="工号" />
+        <el-table-column prop="username" label="姓名" />
+        <el-table-column prop="sex" label="性别">
           <template #default="{ row }">
             {{ row.sex === '1' || row.sex === '男' ? '男' : '女' }}
           </template>
         </el-table-column>
-        <el-table-column prop="college" label="学院" width="120" />
-        <el-table-column prop="email" label="邮箱" width="180" />
-        <el-table-column prop="phone" label="电话" width="120" />
-        <el-table-column label="操作" width="200" fixed="right">
+        <el-table-column label="操作" width="250" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" size="small" @click="editTeacher(row)">
               编辑
@@ -216,7 +213,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { Plus } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
-import { getTeacherList, addUser, updateUser, searchUsers } from '@/api/admin'
+import { getTeacherList, addUser, updateUser, searchUsers, getUserInfo } from '@/api/admin'
 import { deleteStudent as deleteUserApi } from '@/api/student'
 import type { UserInfo } from '@/types'
 
@@ -408,9 +405,24 @@ const editTeacher = (teacher: UserInfo) => {
 }
 
 // 查看教师详情
-const viewTeacher = (teacher: UserInfo) => {
-  currentTeacher.value = teacher
-  showDetailDialog.value = true
+const viewTeacher = async (teacher: UserInfo) => {
+  try {
+    loading.value = true
+    const response = await getUserInfo(teacher.id)
+    if (response.code === 200 && response.data) {
+      // 后端返回的数据结构：{ user: {...}, status: {...}, section: {...} }
+      // 用户信息在 data.user 中
+      currentTeacher.value = response.data.user
+      showDetailDialog.value = true
+    } else {
+      ElMessage.error('获取教师详情失败')
+    }
+  } catch (error) {
+    console.error('获取教师详情失败:', error)
+    ElMessage.error('获取教师详情失败')
+  } finally {
+    loading.value = false
+  }
 }
 
 // 删除教师
@@ -468,7 +480,9 @@ const handleSubmit = async () => {
         const formData = new FormData()
         Object.keys(teacherForm).forEach(key => {
           if (teacherForm[key as keyof typeof teacherForm]) {
-            formData.append(key, teacherForm[key as keyof typeof teacherForm])
+            // 将 sduid 字段转换为 SDUId 发送给后端
+            const fieldName = key === 'sduid' ? 'SDUId' : key
+            formData.append(fieldName, teacherForm[key as keyof typeof teacherForm])
           }
         })
 

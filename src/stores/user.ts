@@ -3,7 +3,7 @@ import { ref, computed } from 'vue'
 import { storage } from '@/utils/storage'
 import { simpleLogin, sduLogin, refreshToken as refreshTokenApi } from '@/api/login'
 import { getUserInfo, logout as logoutApi } from '@/api/user'
-import type { UserSession, LoginRequest, LoginResponse, UserIdentity, UserInfo } from '@/types'
+import type { UserSession, LoginRequest, UserIdentity } from '@/types'
 
 export const useUserStore = defineStore('user', () => {
   // State

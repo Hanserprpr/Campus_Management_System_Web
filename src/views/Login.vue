@@ -198,15 +198,17 @@ const quickLogin = (type : number)=>{
   height: 100vh;
   display: flex;
   align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  justify-content: flex-end;
+  padding-right: 100px;
+  background: url('@/assets/background.png') no-repeat center center;
+  background-size: cover;
 }
 
 .login-box {
   display: flex;
   width: 900px;
   height: 600px;
-  background: #fff;
+  background: transparent;
   border-radius: 16px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   overflow: hidden;
@@ -217,23 +219,29 @@ const quickLogin = (type : number)=>{
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, rgba(200, 22, 29, 0.85) 0%, rgba(160, 19, 24, 0.85) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   color: #fff;
   padding: 40px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-right: none;
 }
 
 .login-title {
   text-align: center;
-  
+
   h1 {
     font-size: 36px;
     font-weight: bold;
     margin-bottom: 16px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
   }
-  
+
   p {
     font-size: 18px;
-    opacity: 0.9;
+    opacity: 0.95;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
   }
 }
 
@@ -243,6 +251,11 @@ const quickLogin = (type : number)=>{
   align-items: center;
   justify-content: center;
   padding: 40px;
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-left: none;
 }
 
 .login-form-wrapper {

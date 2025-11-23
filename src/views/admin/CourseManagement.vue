@@ -154,23 +154,38 @@
         <el-form-item label="审核结果">
           <el-radio-group v-model="approveForm.status">
             <el-radio :label="1">通过</el-radio>
-            <el-radio :label="0">拒绝</el-radio>
+            <el-radio :label="2">拒绝</el-radio>
           </el-radio-group>
         </el-form-item>
-        <el-form-item v-if="approveForm.status === 0" label="拒绝原因">
+        <el-form-item v-if="approveForm.status === 1" label="课序号">
+          <el-input
+            v-model="approveForm.classNum"
+            placeholder="请输入课序号"
+          />
+        </el-form-item>
+        <el-form-item v-if="approveForm.status === 1" label="选择班级">
+          <el-select
+            v-model="approveForm.sectionId"
+            multiple
+            placeholder="请选择班级（可多选）"
+            style="width: 100%"
+            filterable
+          >
+            <el-option
+              v-for="section in sectionList"
+              :key="section.id"
+              :label="`${section.grade}级${section.number}班 (${getMajorName(section.major)})`"
+              :value="section.id"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item v-if="approveForm.status === 2" label="拒绝原因">
           <el-input
             v-model="approveForm.reason"
             type="textarea"
             :rows="3"
             placeholder="请输入拒绝原因"
           />
-        </el-form-item>
-        <el-form-item v-if="approveForm.status === 1" label="上课时间">
-          <el-checkbox-group v-model="approveForm.classNum">
-            <el-checkbox v-for="time in timeSlots" :key="time.value" :label="time.value">
-              {{ time.label }}
-            </el-checkbox>
-          </el-checkbox-group>
         </el-form-item>
       </el-form>
 
@@ -200,7 +215,8 @@ import {
 } from '@/api/course'
 import { getTermList, getCurrentTerm } from '@/api/common'
 import { autoSchedule } from '@/api/course'
-import type { Course, Term } from '@/types'
+import { getSectionListAll } from '@/api/section'
+import type { Course, Term, SectionInfo } from '@/types'
 
 const loading = ref(false)
 const showDetailDialog = ref(false)
@@ -222,36 +238,29 @@ const courseList = ref<Course[]>([])
 const selectedCourses = ref<Course[]>([])
 const currentCourse = ref<Course>({} as Course)
 const termList = ref<Term[]>([])
+const sectionList = ref<SectionInfo[]>([])
 
 const approveForm = reactive({
   status: 1,
   reason: '',
-  classNum: [] as number[]
+  classNum: '',
+  sectionId: [] as number[]
 })
 
-// 时间段选项
-const timeSlots = [
-  { label: '周一 1-2节', value: 1 },
-  { label: '周一 3-4节', value: 2 },
-  { label: '周一 5-6节', value: 3 },
-  { label: '周一 7-8节', value: 4 },
-  { label: '周二 1-2节', value: 5 },
-  { label: '周二 3-4节', value: 6 },
-  { label: '周二 5-6节', value: 7 },
-  { label: '周二 7-8节', value: 8 },
-  { label: '周三 1-2节', value: 9 },
-  { label: '周三 3-4节', value: 10 },
-  { label: '周三 5-6节', value: 11 },
-  { label: '周三 7-8节', value: 12 },
-  { label: '周四 1-2节', value: 13 },
-  { label: '周四 3-4节', value: 14 },
-  { label: '周四 5-6节', value: 15 },
-  { label: '周四 7-8节', value: 16 },
-  { label: '周五 1-2节', value: 17 },
-  { label: '周五 3-4节', value: 18 },
-  { label: '周五 5-6节', value: 19 },
-  { label: '周五 7-8节', value: 20 }
-]
+// 专业名称映射
+const getMajorName = (major: string) => {
+  const majorMap: Record<string, string> = {
+    'MAJOR_0': '软件工程',
+    'MAJOR_1': '数字媒体技术',
+    'MAJOR_2': '大数据',
+    'MAJOR_3': '人工智能',
+    '0': '软件工程',
+    '1': '数字媒体技术',
+    '2': '大数据',
+    '3': '人工智能'
+  }
+  return majorMap[major] || major
+}
 
 // 获取状态标签类型
 const getStatusType = (status: string|undefined) => {
@@ -276,6 +285,18 @@ const fetchTermList = async () => {
     }
   } catch (error) {
     console.error('获取学期列表失败:', error)
+  }
+}
+
+// 获取班级列表
+const fetchSectionList = async () => {
+  try {
+    const response = await getSectionListAll({ page: 1, size: 500 })
+    if (response.code === 200 && response.data) {
+      sectionList.value = response.data.section || []
+    }
+  } catch (error) {
+    console.error('获取班级列表失败:', error)
   }
 }
 
@@ -424,28 +445,31 @@ const approveCourse = (course: Course) => {
   currentCourse.value = course
   approveForm.status = 1
   approveForm.reason = ''
-  approveForm.classNum = []
+  // 预填充课序号（从申请中读取）
+  approveForm.classNum = course.classNum || ''
+  approveForm.sectionId = []
   showApproveDialog.value = true
 }
 
 // 拒绝课程
 const rejectCourse = (course: Course) => {
   currentCourse.value = course
-  approveForm.status = 0
+  approveForm.status = 2
   approveForm.reason = ''
-  approveForm.classNum = []
+  approveForm.classNum = ''
+  approveForm.sectionId = []
   showApproveDialog.value = true
 }
 
 // 处理审核
 const handleApprove = async () => {
-  if (approveForm.status === 0 && !approveForm.reason.trim()) {
+  if (approveForm.status === 2 && !approveForm.reason.trim()) {
     ElMessage.warning('请输入拒绝原因')
     return
   }
 
-  if (approveForm.status === 1 && approveForm.classNum.length === 0) {
-    ElMessage.warning('请选择上课时间')
+  if (approveForm.status === 1 && !approveForm.classNum.trim()) {
+    ElMessage.warning('请输入课序号')
     return
   }
 
@@ -454,8 +478,9 @@ const handleApprove = async () => {
     await approveCourseApi(
       currentCourse.value.id,
       approveForm.status,
+      approveForm.classNum,
       approveForm.reason,
-      approveForm.classNum
+      approveForm.sectionId
     )
 
     ElMessage.success(approveForm.status === 1 ? '审核通过' : '审核拒绝')
@@ -528,6 +553,7 @@ const handleAutoSchedule = async () => {
 
 onMounted(() => {
   fetchTermList()
+  fetchSectionList()
   fetchCourseList()
 })
 </script>

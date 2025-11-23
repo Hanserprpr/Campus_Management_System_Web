@@ -27,7 +27,8 @@ export function formatDateTime(date: string | Date): string {
  * @returns 当前日期字符串
  */
 export function getCurrentDate(): string {
-  return dayjs().format('YYYY-MM-DD')
+  // 测试：返回明天的日期
+  return dayjs().add(1, 'day').format('YYYY-MM-DD')
 }
 
 /**
@@ -52,8 +53,10 @@ export function getDayOfWeek(date: string | Date = new Date()): number {
  * @param date 日期
  * @returns 星期几的中文名称
  */
-export function getDayOfWeekName(date: string | Date = new Date()): string {
-  const day = getDayOfWeek(date)
+export function getDayOfWeekName(_date: string | Date = new Date()): string {
+  // 测试：返回明天的星期几
+  const tomorrow = dayjs().add(1, 'day').toDate()
+  const day = getDayOfWeek(tomorrow)
   const names = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六']
   return names[day]
 }
