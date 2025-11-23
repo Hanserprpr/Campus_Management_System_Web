@@ -140,7 +140,6 @@ const handleLogin = async () => {
         ])
         
         ElMessage.success('登录成功')
-        console.log('用户身份:', userStore.identity)
         // 根据用户身份跳转到对应页面
         switch (userStore.identity) {
           case 0:

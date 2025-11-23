@@ -84,6 +84,9 @@
             <template #header>
               <div class="card-header">
                 <span>最新公告</span>
+                <el-button type="text" @click="showNoticeDialog = true">
+                  发布公告
+                </el-button>
               </div>
             </template>
 
@@ -135,17 +138,49 @@
         <el-button @click="showAnnouncementDialog = false">关闭</el-button>
       </template>
     </el-dialog>
+
+    <!-- 发布公告对话框 -->
+    <el-dialog v-model="showNoticeDialog" title="发布公告" width="600px">
+      <el-form :model="noticeForm" label-width="80px">
+        <el-form-item label="公告标题" required>
+          <el-input v-model="noticeForm.title" placeholder="请输入公告标题" />
+        </el-form-item>
+        <el-form-item label="公告内容" required>
+          <el-input
+            v-model="noticeForm.content"
+            type="textarea"
+            :rows="6"
+            placeholder="请输入公告内容"
+          />
+        </el-form-item>
+        <el-form-item label="可见范围">
+          <el-select v-model="noticeForm.visibleScope" placeholder="请选择可见范围" disabled>
+            <el-option label="教师及学生" :value="2" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="置顶">
+          <el-switch v-model="noticeForm.isTop" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showNoticeDialog = false">取消</el-button>
+        <el-button type="primary" :loading="publishLoading" @click="publishNotice">
+          发布
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { Reading, Document, Calendar } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { useAppStore } from '@/stores/app'
 import { formatDate, getCurrentDate, getDayOfWeekName, getDayOfWeek } from '@/utils/date'
 import { getTeacherMessage } from '@/api/teacher'
-import { getTeacherNoticeList } from '@/api/notice'
+import { getTeacherNoticeList, publishNotice as publishNoticeApi } from '@/api/notice'
 import { getCourseSchedule } from '@/api/course'
 import type { Course, Announcement } from '@/types'
 import router from '@/router'
@@ -165,6 +200,15 @@ const todayCourses = ref<Course[]>([])
 const announcements = ref<Announcement[]>([])
 const showAnnouncementDialog = ref(false)
 const currentAnnouncement = ref<Announcement | null>(null)
+const showNoticeDialog = ref(false)
+const publishLoading = ref(false)
+
+const noticeForm = ref({
+  title: '',
+  content: '',
+  visibleScope: 2, // 固定为教师及学生
+  isTop: false
+})
 
 // 课程时间段映射
 const timeSlots = [
@@ -217,15 +261,8 @@ const fetchTodayCourses = async () => {
       const allCourses = Array.isArray(response.data) ? response.data : []
 
       // 获取今天是星期几 (1-5, 1表示周一，只有工作日有课)
-      // 测试：往后调1天
       const today = getDayOfWeek() // 0-6, 0表示星期日
-      let todayIndex = today === 0 ? 7 : today // 转换为1-7，7表示星期日
-      todayIndex = todayIndex + 1 // 往后调1天
-      if (todayIndex > 7) todayIndex -= 7 // 如果大于7，减7天（例如周日+1=周一）
-
-      console.log('教师端 - 今天是星期几（原始）:', today)
-      console.log('教师端 - 今天是星期几（调整后）:', todayIndex)
-      console.log('教师端 - 所有课程:', allCourses)
+      const todayIndex = today === 0 ? 7 : today // 转换为1-7，7表示星期日
 
       // 筛选今日课程
       // 后端返回 time 范围：0-24，每天5节课（周一到周五）
@@ -234,11 +271,8 @@ const fetchTodayCourses = async () => {
       const todaysCourses = allCourses.filter(course => {
         const time = Number.parseInt(course.time as string)
         const day = Math.floor(time / 5) + 1 // +1 转换为 1-5 对应周一到周五
-        console.log(`教师端 - 课程 ${course.name}: time=${time}, day=${day}, 是否匹配=${day === todayIndex}`)
         return day === todayIndex
       })
-
-      console.log('教师端 - 筛选后的今日课程:', todaysCourses)
 
       // 处理课程数据，添加时间显示
       todayCourses.value = todaysCourses.map(course => {
@@ -251,8 +285,6 @@ const fetchTodayCourses = async () => {
           period: classOrder
         }
       }).sort((a, b) => a.period - b.period) // 按时间段排序
-
-      console.log('教师端 - 处理后的今日课程:', todayCourses.value)
 
       // 更新统计数据中的今日课程数量
       stats.value.todayCourses = todayCourses.value.length
@@ -298,6 +330,41 @@ const fetchAnnouncements = async () => {
 const showAnnouncementDetail = (announcement: Announcement) => {
   currentAnnouncement.value = announcement
   showAnnouncementDialog.value = true
+}
+
+// 发布公告
+const publishNotice = async () => {
+  if (!noticeForm.value.title || !noticeForm.value.content) {
+    ElMessage.warning('请填写完整的公告信息')
+    return
+  }
+
+  publishLoading.value = true
+  try {
+    await publishNoticeApi({
+      title: noticeForm.value.title,
+      content: noticeForm.value.content,
+      visibleScope: noticeForm.value.visibleScope,
+      isTop: noticeForm.value.isTop ? 1 : 0
+    })
+
+    ElMessage.success('公告发布成功')
+    showNoticeDialog.value = false
+
+    // 重置表单
+    noticeForm.value = {
+      title: '',
+      content: '',
+      visibleScope: 2,
+      isTop: false
+    }
+
+    fetchAnnouncements() // 刷新公告列表
+  } catch (error) {
+    ElMessage.error('发布公告失败')
+  } finally {
+    publishLoading.value = false
+  }
 }
 
 onMounted(() => {
@@ -371,6 +438,9 @@ onMounted(() => {
 }
 
 .card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   font-size: 16px;
   font-weight: bold;
   color: #303133;
