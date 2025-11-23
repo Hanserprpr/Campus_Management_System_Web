@@ -20,11 +20,14 @@
       <!-- 搜索栏 -->
       <div class="search-bar">
         <el-form :model="searchForm" inline>
-          <el-form-item label="学号">
-            <el-input v-model="searchForm.sduid" placeholder="请输入学号" clearable />
-          </el-form-item>
-          <el-form-item label="姓名">
-            <el-input v-model="searchForm.username" placeholder="请输入姓名" clearable />
+          <el-form-item label="姓名或学号">
+            <el-input
+              v-model="searchForm.keyword"
+              placeholder="请输入姓名或学号"
+              clearable
+              style="width: 250px;"
+              @keyup.enter="handleSearch"
+            />
           </el-form-item>
           <el-form-item label="专业">
             <el-select v-model="searchForm.major" placeholder="请选择专业" clearable style="width: 200px;">
@@ -307,9 +310,7 @@ const uploadRef = ref<UploadInstance>()
 const uploadFile = ref<File | null>(null)
 
 const searchForm = reactive({
-  sduid: '',
-  username: '',
-  college: '',
+  keyword: '',
   major: ''
 })
 
@@ -394,13 +395,13 @@ const fetchStudentList = async () => {
   try {
     let response: any
 
-    // 判断是否有搜索条件
-    const hasSearchKeyword = searchForm.sduid || searchForm.username
+    // 判断是否有搜索关键词
+    const hasSearchKeyword = searchForm.keyword.trim() !== ''
 
     if (hasSearchKeyword) {
       // 使用搜索API
       const searchParams = {
-        keyword: searchForm.sduid || searchForm.username,
+        keyword: searchForm.keyword,
         permission: 2, // 学生权限
         pageNum: pagination.page,
         pageSize: pagination.size
@@ -467,9 +468,7 @@ const handleSearch = () => {
 // 重置搜索
 const resetSearch = () => {
   Object.assign(searchForm, {
-    sduid: '',
-    username: '',
-    college: '',
+    keyword: '',
     major: ''
   })
   pagination.page = 1

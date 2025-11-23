@@ -11,12 +11,7 @@
       <div class="login-right">
         <div class="login-form-wrapper">
           <h2 class="form-title">欢迎登录</h2>
-          
-          <el-tabs v-model="loginType" class="login-tabs">
-            <el-tab-pane label="简单登录" name="simple"></el-tab-pane>
-            <el-tab-pane label="统一认证" name="sdu"></el-tab-pane>
-          </el-tabs>
-          
+
           <el-form
             ref="loginFormRef"
             :model="loginForm"
@@ -109,7 +104,6 @@ const router = useRouter()
 const userStore = useUserStore()
 const appStore = useAppStore()
 
-const loginType = ref('simple')
 const loading = ref(false)
 const loginFormRef = ref<FormInstance>()
 
@@ -130,14 +124,13 @@ const loginRules: FormRules = {
 
 const handleLogin = async () => {
   if (!loginFormRef.value) return
-  
+
   await loginFormRef.value.validate(async (valid) => {
     if (valid) {
       loading.value = true
-      
+
       try {
-        const isSDULogin = loginType.value === 'sdu'
-        await userStore.login(loginForm, isSDULogin)
+        await userStore.login(loginForm, false)
         
         // 登录成功后获取基础数据
         await Promise.all([
@@ -178,7 +171,6 @@ const handleLogin = async () => {
 const quickLogin = (type : number)=>{
   let username: string;
   let password: string = "123456";
-  loginType.value = 'simple';
   if( type == 1){
     username = "202400000001"
   }else if(type == 2){
