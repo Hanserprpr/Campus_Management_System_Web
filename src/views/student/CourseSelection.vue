@@ -8,19 +8,21 @@
             placeholder="请输入课程名称"
             clearable
             @clear="handleSearch"
+            style="width: 260px"
           />
         </el-form-item>
         
-        <el-form-item label="课程小类">
+        <el-form-item label="课程类型">
           <el-select
-            v-model="searchForm.category"
-            placeholder="请选择课程小类"
+            v-model="searchForm.type"
+            placeholder="请选择课程类型"
             clearable
             @change="handleSearch"
+            style="width: 200px"
           >
             <el-option label="必修课" value="必修" />
-            <el-option label="选修课" value="选修" />
-            <el-option label="公共课" value="公共" />
+            <el-option label="限选课" value="限选" />
+            <el-option label="任选课" value="任选" />
           </el-select>
         </el-form-item>
         
@@ -42,7 +44,7 @@
           >
             <el-table-column prop="name" label="课程名称" min-width="150" />
             <el-table-column prop="teacherName" label="授课教师" width="120" />
-            <el-table-column prop="category" label="课程小类" width="100" />
+            <el-table-column prop="type" label="课程类型" width="100" />
             <el-table-column prop="point" label="学分" width="80" />
             <el-table-column prop="classroom" label="教室" width="120" />
             <el-table-column label="上课时间" width="200">
@@ -91,7 +93,7 @@
           >
             <el-table-column prop="name" label="课程名称" min-width="150" />
             <el-table-column prop="teacherName" label="授课教师" width="120" />
-            <el-table-column prop="category" label="课程小类" width="100" />
+            <el-table-column prop="type" label="课程类型" width="100" />
             <el-table-column prop="point" label="学分" width="80" />
             <el-table-column prop="classroom" label="教室" width="120" />
             <el-table-column label="上课时间" width="200">
@@ -140,7 +142,7 @@ const loading = ref(false)
 
 const searchForm = reactive({
   keyword: '',
-  category: ''
+  type: ''
 })
 
 const unselectedCourses = ref<Course[]>([])
@@ -159,16 +161,24 @@ const selectedPage = reactive({
 })
 
 const formatCourseTime = (course: Course) => {
-  return `第${course.weekStart}-${course.weekEnd}周 ${course.time}`
+  const days = ['周一', '周二', '周三', '周四', '周五']
+  const slotNum = Number(course.time)
+  const hasSlot = Number.isInteger(slotNum) && slotNum >= 0 && slotNum <= 24
+  if (!hasSlot) {
+    return `第${course.weekStart}-${course.weekEnd}周 ${course.time ?? ''}`
+  }
+  const day = days[Math.floor(slotNum / 5)] ?? ''
+  const period = (slotNum % 5) + 1
+  return `第${course.weekStart}-${course.weekEnd}周，${day}第${period}节`
 }
 
 const loadUnselectedCourses = async () => {
   loading.value = true
   try {
-    const response = searchForm.keyword || searchForm.category
+    const response = searchForm.keyword || searchForm.type
       ? await searchCourses({
           keyword: searchForm.keyword,
-          type: searchForm.category,
+          type: searchForm.type,
         })
       : await getUnselectedCourses({
           page: unselectedPage.page,
@@ -221,7 +231,7 @@ const handleSearch = () => {
 
 const handleReset = () => {
   searchForm.keyword = ''
-  searchForm.category = ''
+  searchForm.type = ''
   handleSearch()
 }
 
@@ -275,6 +285,18 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
+.page-container {
+  width: 100%;
+  max-width: none;
+  padding: 20px 24px;
+}
+
+.search-card,
+.content-card {
+  width: 100%;
+  box-sizing: border-box;
+}
+
 .search-card {
   margin-bottom: 20px;
 }
