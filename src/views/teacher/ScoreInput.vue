@@ -73,8 +73,8 @@
         :empty-text="selectedCourseId ? '暂无学生数据' : '请先选择课程'"
       >
         <el-table-column type="index" label="序号" width="60" align="center" />
-        <el-table-column prop="username" label="学生姓名" width="120" align="center" />
-        <el-table-column prop="studentId" label="学号" width="120" align="center" />
+        <el-table-column prop="studentName" label="学生姓名" width="120" align="center" />
+        <el-table-column prop="SDUId" label="学号" width="150" align="center" />
         <el-table-column label="平时成绩" width="150" align="center">
           <template #default="{ row }">
             <el-input-number
@@ -128,14 +128,14 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getTermList, getCurrentTerm } from '@/api/common'
-import { searchTeacherCourses } from '@/api/course'
-import { getCourseGradeList, setGrade, releaseGrade, type Grade } from '@/api/grade'
+import { searchTeacherCourses, getCourseStudents } from '@/api/course'
+import { setGrade, releaseGrade } from '@/api/grade'
 import type { Term, Course } from '@/types'
 
 const loading = ref(false)
 const termList = ref<Term[]>([])
 const courseList = ref<Course[]>([])
-const gradeList = ref<Grade[]>([])
+const gradeList = ref<any[]>([])
 const selectedCourseId = ref<number | null>(null)
 const currentCourse = ref<Course | null>(null)
 
@@ -229,17 +229,32 @@ const fetchGradeList = async () => {
 
   try {
     loading.value = true
-    const response = await getCourseGradeList(selectedCourseId.value)
 
-    if (response.code === 200 && response.data) {
-      gradeList.value = (Array.isArray(response.data) ? response.data : []).map((item: any) => ({
-        ...item,
-        changed: false,
-        originalRegular: item.regular,
-        originalFinalScore: item.finalScore
-      }))
+    // 使用 /class/{courseId}/students 获取选课学生列表
+    // 后端返回的数据已经包含了成绩信息
+    const studentsResponse = await getCourseStudents(selectedCourseId.value)
+
+    if (studentsResponse.code === 200 && studentsResponse.data) {
+      const students = Array.isArray(studentsResponse.data) ? studentsResponse.data : []
+
+      // 后端返回的数据格式：
+      // { id, username, sduid, major, regular, finalScore, grade, number, sectionNumber }
+      gradeList.value = students.map((student: any) => {
+        return {
+          id: student.id,
+          studentId: student.id,
+          studentName: student.username,
+          SDUId: student.sduid,
+          regular: student.regular || 0,
+          finalScore: student.finalScore || 0,
+          grade: student.grade || 0,
+          changed: false,
+          originalRegular: student.regular || 0,
+          originalFinalScore: student.finalScore || 0
+        }
+      })
     } else {
-      ElMessage.error(response.msg || '获取成绩列表失败')
+      ElMessage.error(studentsResponse.msg || '获取学生列表失败')
     }
   } catch (error) {
     console.error('获取成绩列表失败:', error)

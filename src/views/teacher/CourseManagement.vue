@@ -57,11 +57,16 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="280" fixed="right">
+        <el-table-column label="操作" width="350" fixed="right">
           <template #default="{ row }">
             <el-button type="info" size="small" @click="viewCourse(row)">
               详情
             </el-button>
+            <template v-if="row.status === '已通过'">
+              <el-button type="success" size="small" @click="viewStudents(row)">
+                选课学生
+              </el-button>
+            </template>
             <template v-if="row.status === '待审批' || row.status === '已拒绝'">
               <el-button type="primary" size="small" @click="editCourse(row)">
                 编辑
@@ -318,6 +323,45 @@
         show-icon
       />
     </el-dialog>
+
+    <!-- 选课学生对话框 -->
+    <el-dialog v-model="showStudentsDialog" title="选课学生名单" width="800px">
+      <div v-if="currentCourse" style="margin-bottom: 16px;">
+        <el-tag type="primary">{{ currentCourse.name }}</el-tag>
+        <el-tag type="info" style="margin-left: 8px;">课序号: {{ currentCourse.classNum }}</el-tag>
+        <el-tag type="success" style="margin-left: 8px;">
+          选课人数: {{ studentList.length }}
+          <template v-if="currentCourse.capacity">
+            / {{ currentCourse.capacity }}
+          </template>
+        </el-tag>
+      </div>
+
+      <el-table :data="studentList" border stripe>
+        <el-table-column type="index" label="序号" width="60" />
+        <el-table-column prop="sduid" label="学号" width="150">
+          <template #default="{ row }">
+            {{ row.sduid || row.SDUId }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="username" label="姓名" width="120">
+          <template #default="{ row }">
+            {{ row.username || row.name }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="major" label="专业">
+          <template #default="{ row }">
+            {{ getMajorName(row.major) }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="grade" label="年级" width="100" />
+        <el-table-column prop="section" label="班级" width="100">
+          <template #default="{ row }">
+            {{ row.section || row.number || '-' }}
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-dialog>
   </div>
 </template>
 
@@ -332,7 +376,8 @@ import {
   updateTeacherCourse,
   deleteTeacherCourse,
   getCourseDetail,
-  getCourseReason
+  getCourseReason,
+  getCourseStudents
 } from '@/api/course'
 import { getTermList, getClassRoomList, getCurrentTerm } from '@/api/common'
 import type { Course, Term, CreateCourseDTO } from '@/types'
@@ -343,6 +388,7 @@ const submitLoading = ref(false)
 const showDetailDialog = ref(false)
 const showFormDialog = ref(false)
 const showReasonDialog = ref(false)
+const showStudentsDialog = ref(false)
 const isEdit = ref(false)
 
 const formRef = ref<FormInstance>()
@@ -364,6 +410,7 @@ const classroomList = ref<Classroom[]>([])
 const currentCourse = ref<Course>({} as Course)
 const rejectionReason = ref('')
 const currentTermValue = ref('')
+const studentList = ref<any[]>([])
 
 // 课程表单
 const courseForm = reactive<Partial<CreateCourseDTO>>({
@@ -419,6 +466,21 @@ const formRules: FormRules = {
   weekStart: [{ required: true, message: '请输入开始周次', trigger: 'blur' }],
   weekEnd: [{ required: true, message: '请输入结束周次', trigger: 'blur' }],
   examination: [{ required: true, message: '请选择考核方式', trigger: 'change' }]
+}
+
+// 专业名称映射
+const getMajorName = (major: string) => {
+  const majorMap: Record<string, string> = {
+    'MAJOR_0': '软件工程',
+    'MAJOR_1': '数字媒体技术',
+    'MAJOR_2': '大数据',
+    'MAJOR_3': '人工智能',
+    '0': '软件工程',
+    '1': '数字媒体技术',
+    '2': '大数据',
+    '3': '人工智能'
+  }
+  return majorMap[major] || major
 }
 
 // 获取状态标签类型
@@ -629,6 +691,28 @@ const viewReason = async (course: Course) => {
   } catch (error) {
     console.error('获取拒绝原因失败:', error)
     ElMessage.error('获取拒绝原因失败')
+  }
+}
+
+// 查看选课学生
+const viewStudents = async (course: Course) => {
+  try {
+    loading.value = true
+    currentCourse.value = course
+
+    const response = await getCourseStudents(course.id)
+
+    if (response.code === 200 && response.data) {
+      studentList.value = Array.isArray(response.data) ? response.data : []
+      showStudentsDialog.value = true
+    } else {
+      ElMessage.error(response.msg || '获取学生列表失败')
+    }
+  } catch (error) {
+    console.error('获取学生列表失败:', error)
+    ElMessage.error('获取学生列表失败')
+  } finally {
+    loading.value = false
   }
 }
 
