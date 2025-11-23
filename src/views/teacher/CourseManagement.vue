@@ -172,7 +172,6 @@
                 v-model="courseForm.category"
                 placeholder="请选择课程小类"
                 style="width: 100%"
-                :disabled="!isSportsCategory"
                 clearable
               >
                 <el-option label="无" value="无" />
@@ -429,11 +428,6 @@ const courseForm = reactive<Partial<CreateCourseDTO>>({
   regularRatio: 0.4,
   finalRatio: 0.6,
   intro: ''
-})
-
-// 判断是否为体育类课程（课程名称包含"体育"）
-const isSportsCategory = computed(() => {
-  return courseForm.name?.includes('体育') || false
 })
 
 // 成绩占比百分比形式（用于表单输入）

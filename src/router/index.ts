@@ -160,13 +160,6 @@ router.beforeEach((to, _from, next) => {
   // 初始化用户状态（从本地存储恢复）
   userStore.checkAuth()
 
-  console.log('路由守卫检查:', {
-    to: to.path,
-    isLoggedIn: userStore.isLoggedIn,
-    identity: userStore.identity,
-    requiresAuth: to.meta.requiresAuth
-  })
-
   // 检查是否需要认证
   if (to.meta.requiresAuth) {
     if (!userStore.isLoggedIn) {
@@ -199,7 +192,6 @@ router.beforeEach((to, _from, next) => {
 
   // 已登录用户访问登录页，跳转到对应的首页
   if (to.path === '/login' && userStore.isLoggedIn) {
-    console.log('已登录用户访问登录页，跳转到对应首页')
     switch (userStore.identity) {
       case 0:
         next('/admin')

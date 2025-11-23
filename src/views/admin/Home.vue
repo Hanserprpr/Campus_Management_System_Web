@@ -169,9 +169,8 @@
         </el-form-item>
         <el-form-item label="可见范围">
           <el-select v-model="noticeForm.visibleScope" placeholder="请选择可见范围">
-            <el-option label="所有人" :value="0" />
-            <el-option label="学生" :value="1" />
-            <el-option label="教师" :value="2" />
+            <el-option label="教师" :value="1" />
+            <el-option label="教师及学生" :value="2" />
           </el-select>
         </el-form-item>
         <el-form-item label="置顶">
@@ -278,7 +277,7 @@ const approvalForm = ref({
 const noticeForm = ref({
   title: '',
   content: '',
-  visibleScope: 0,
+  visibleScope: 2, // 默认为教师及学生
   isTop: false
 })
 
@@ -366,7 +365,6 @@ const confirmApproval = async () => {
   approvalLoading.value = true
   try {
     const sectionIds = approvalForm.value.selectedClasses.map(id => Number(id))
-    console.log(sectionIds)
     await approveCourseApi(
       Number(currentCourse.value.id),
       1,
@@ -425,8 +423,7 @@ const publishNotice = async () => {
       title: noticeForm.value.title,
       content: noticeForm.value.content,
       visibleScope: noticeForm.value.visibleScope,
-      isTop: noticeForm.value.isTop ? 1 : 0,
-      publishTime: new Date().toISOString()
+      isTop: noticeForm.value.isTop ? 1 : 0
     })
 
     ElMessage.success('公告发布成功')
@@ -436,7 +433,7 @@ const publishNotice = async () => {
     noticeForm.value = {
       title: '',
       content: '',
-      visibleScope: 0,
+      visibleScope: 2,
       isTop: false
     }
 
