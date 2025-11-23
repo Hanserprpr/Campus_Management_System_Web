@@ -183,12 +183,12 @@ const fetchTodayCourses = async () => {
       console.log('所有课程:', allCourses)
 
       // 筛选今日课程
-      // time字段范围：0-24，每天5节课（周一到周五）
+      // 后端返回 time 范围：0-24，每天5节课（周一到周五）
       // time = 0-4: 周一, 5-9: 周二, 10-14: 周三, 15-19: 周四, 20-24: 周五
-      // day = Math.floor(time / 5) + 1
+      // day = Math.floor(time / 5) (0-4 对应周一到周五)
       const todaysCourses = allCourses.filter(course => {
         const time = Number.parseInt(course.time as string)
-        const day = Math.floor(time / 5) + 1 // 1-5 对应周一到周五
+        const day = Math.floor(time / 5) + 1 // +1 转换为 1-5 对应周一到周五
         console.log(`课程 ${course.name}: time=${time}, day=${day}, 是否匹配=${day === todayIndex}`)
         return day === todayIndex
       })
@@ -198,7 +198,7 @@ const fetchTodayCourses = async () => {
       // 处理课程数据，添加时间显示
       todayCourses.value = todaysCourses.map(course => {
         const time = Number.parseInt(course.time as string)
-        const classOrder = (time % 5) + 1 // 0-4 转换为 1-5
+        const classOrder = (time % 5) + 1 // time % 5 = 0-4，+1 转换为 1-5（第几节课）
 
         return {
           ...course,

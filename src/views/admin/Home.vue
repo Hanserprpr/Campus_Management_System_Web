@@ -365,13 +365,14 @@ const confirmApproval = async () => {
 
   approvalLoading.value = true
   try {
-    const classNums = approvalForm.value.selectedClasses.map(id => Number(id))
-    console.log(classNums)
+    const sectionIds = approvalForm.value.selectedClasses.map(id => Number(id))
+    console.log(sectionIds)
     await approveCourseApi(
       Number(currentCourse.value.id),
       1,
-      undefined,
-      classNums
+      currentCourse.value.classNum || '',  // classNum
+      undefined,  // reason
+      sectionIds  // sectionId
     )
 
     ElMessage.success('课程审批通过')
@@ -395,7 +396,12 @@ const rejectCourse = async (courseId: string) => {
     })
 
     if (reason) {
-      await approveCourseApi(Number(courseId), 2, reason)
+      await approveCourseApi(
+        Number(courseId),
+        2,
+        undefined,  // classNum
+        reason      // reason
+      )
       ElMessage.success('课程已拒绝')
       fetchPendingCourses() // 刷新列表
     }

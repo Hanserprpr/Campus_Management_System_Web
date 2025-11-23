@@ -163,12 +163,14 @@ const selectedPage = reactive({
 const formatCourseTime = (course: Course) => {
   const days = ['周一', '周二', '周三', '周四', '周五']
   const slotNum = Number(course.time)
+  // 后端返回 time 范围：0-24
   const hasSlot = Number.isInteger(slotNum) && slotNum >= 0 && slotNum <= 24
   if (!hasSlot) {
     return `第${course.weekStart}-${course.weekEnd}周 ${course.time ?? ''}`
   }
-  const day = days[Math.floor(slotNum / 5)] ?? ''
-  const period = (slotNum % 5) + 1
+  // time = 0-4: 周一, 5-9: 周二, 10-14: 周三, 15-19: 周四, 20-24: 周五
+  const day = days[Math.floor(slotNum / 5)] ?? ''  // Math.floor(slotNum / 5) = 0-4
+  const period = (slotNum % 5) + 1  // slotNum % 5 = 0-4，+1 转换为 1-5
   return `第${course.weekStart}-${course.weekEnd}周，${day}第${period}节`
 }
 

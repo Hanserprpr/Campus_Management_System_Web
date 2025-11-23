@@ -180,12 +180,13 @@ const makeCoursesTableData = () => {
 
   courses.forEach((value: Course) => {
     const time = Number.parseInt(value.time as string)
-    const classOrder: number = time % 5
-    const day: number = Math.floor(time / 5) + 1
-    if (classOrder > 0) {
-      courseTableData[classOrder - 1][day - 1] = value
-    } else if (classOrder === 0) {
-      courseTableData[4][day - 2] = value // 后端周日day=7, time=30, day-1=6, time%5=0, order=4
+    // 后端返回 time 范围：0-24
+    // 周一: 0-4, 周二: 5-9, 周三: 10-14, 周四: 15-19, 周五: 20-24
+    const day: number = Math.floor(time / 5)  // 0-4 对应周一到周五
+    const classOrder: number = time % 5  // 0-4 对应第1-5节
+
+    if (day >= 0 && day < 7 && classOrder >= 0 && classOrder < 5) {
+      courseTableData[classOrder][day] = value
     }
   })
 }
